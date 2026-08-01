@@ -1,0 +1,70 @@
+<div class="qr-modal-container">
+  <!-- Loading State -->
+  <div *ngIf="loading" class="loading-state">
+    <div class="spinner"></div>
+    <p>Preparing QR code...</p>
+  </div>
+
+  <!-- Missing UPI Warn State -->
+  <div *ngIf="!loading && !upiId" class="warning-state">
+    <span class="material-icons warning-icon">warning_amber</span>
+    <h2>UPI ID Required</h2>
+    <p class="warning-text">
+      To generate a collection QR code, you must first configure your UPI ID under Payment Setup in Settings.
+    </p>
+    <div class="action-buttons">
+      <button class="btn btn-primary" (click)="goToSettings()">
+        <span class="material-icons">settings</span>
+        Go to Settings
+      </button>
+      <button class="btn btn-secondary" (click)="close()">Cancel</button>
+    </div>
+  </div>
+
+  <!-- QR Display State -->
+  <div *ngIf="!loading && upiId" class="qr-display-state">
+    <div class="modal-header">
+      <h2>Collect Payment</h2>
+      <button class="close-btn" (click)="close()">
+        <span class="material-icons">close</span>
+      </button>
+    </div>
+
+    <div class="modal-body">
+      <p class="summary-text">
+        Scan this QR with any UPI app to collect from <strong>{{ data.personName }}</strong>.
+      </p>
+
+      <div class="amount-badge">
+        <span class="currency">₹</span>
+        <span class="value">{{ amount | number:'1.2-2' }}</span>
+      </div>
+
+      <!-- QR Canvas Wrapper -->
+      <div class="qr-code-card">
+        <canvas #canvas></canvas>
+        <div class="payee-info">
+          <span class="label">Pay to</span>
+          <span class="name">{{ upiDisplayName }}</span>
+          <span class="upi-handle">{{ upiId }}</span>
+        </div>
+      </div>
+
+      <div class="scanner-guidance">
+        <span class="material-icons">info</span>
+        <span>Works on BHIM, Google Pay, PhonePe, Paytm, and other UPI apps.</span>
+      </div>
+    </div>
+
+    <div class="modal-footer">
+      <button class="btn btn-primary" (click)="shareQR()">
+        <span class="material-icons">share</span>
+        Share UPI Link
+      </button>
+      <button class="btn btn-secondary" (click)="downloadQR()">
+        <span class="material-icons">download</span>
+        Download PNG
+      </button>
+    </div>
+  </div>
+</div>

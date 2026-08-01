@@ -37,6 +37,10 @@ export class PersonService {
     return this.api.delete<void>(`/v1/people/${id}`);
   }
 
+  getQrPayload(id: number): Observable<any> {
+    return this.api.get<any>(`/v1/people/${id}/qr-payload`);
+  }
+
   // Aliases for compatibility
   getAllPeople(): Observable<Person[]> { return this.getAll(); }
   createPerson(payload: { name: string }): Observable<Person> { return this.create(payload); }

@@ -1,189 +1,222 @@
-<!-- Inline Delete Confirm Modal -->
-<div class="confirm-overlay" *ngIf="confirmDeleteTxId">
-  <div class="confirm-modal">
-    <div class="confirm-icon">🗑️</div>
-    <h3 class="confirm-title">Delete Transaction?</h3>
-    <p class="confirm-text">This will permanently remove this transaction. This cannot be undone.</p>
-    <div class="confirm-actions">
-      <button class="confirm-btn-cancel" (click)="cancelDeleteTx()">Cancel</button>
-      <button class="confirm-btn-delete" (click)="deleteTransaction(confirmDeleteTxId!)">Yes, Delete</button>
-    </div>
-  </div>
-</div>
-
-<div class="transaction-list-container">
+<div class="transaction-list-container page-container">
 
   <!-- Header -->
-  <div class="list-header">
-    <h1 class="page-title">Transactions</h1>
+  <app-page-header 
+    title="Transactions"
+    subtitle="View and manage all your financial activity.">
+    <app-button [variant]="showFilters ? 'primary' : 'outline'" (click)="toggleFilters()">
+      <span class="material-icons">tune</span> Filter
+    </app-button>
+    <app-button variant="outline" (click)="exportToCSV()" *ngIf="transactions.length > 0">
+      <span class="material-icons">download</span> Export
+    </app-button>
+    <app-button variant="primary" routerLink="/transactions/new">
+      <span class="material-icons">add</span> Add Transaction
+    </app-button>
+  </app-page-header>
 
-    <div class="header-actions">
-      <button class="btn-filter" (click)="toggleFilters()">
-        🔍 Filter
-      </button>
-      <button class="btn-export" (click)="exportToCSV()">
-        📥 Export
-      </button>
-      <button class="btn-add" routerLink="/transactions/new">
-        ➕ Add Transaction
-      </button>
-    </div>
-  </div>
+  <!-- Filter Panel Card -->
+  <app-card class="filter-panel mb-4" *ngIf="showFilters">
+    <form [formGroup]="filterForm" class="filter-grid-layout">
+      
+      <app-select
+        label="Type"
+        [options]="typeOptions"
+        [(ngModel)]="filters.type"
+        [ngModelOptions]="{standalone: true}"
+        (ngModelChange)="applyFilters()"
+        placeholder="All Types">
+      </app-select>
+      
+      <app-select
+        label="Account"
+        [options]="accountOptions"
+        [(ngModel)]="filters.accountId"
+        [ngModelOptions]="{standalone: true}"
+        (ngModelChange)="applyFilters()"
+        placeholder="All Accounts">
+      </app-select>
 
-  <!-- Filter Panel -->
-  <div class="filter-panel" *ngIf="showFilters">
-    <div class="filter-grid">
+      <app-input
+        label="From Date"
+        type="date"
+        id="from-date"
+        placeholder="Select date"
+        [(ngModel)]="filters.fromDate"
+        [ngModelOptions]="{standalone: true}"
+        (ngModelChange)="applyFilters()">
+      </app-input>
 
-      <div>
-        <label>Type</label>
-        <select [(ngModel)]="filters.type" (change)="applyFilters()">
-          <option value="">All Types</option>
-          <option value="EXPENSE">Expense</option>
-          <option value="MONEY_GIVEN">Money Given</option>
-          <option value="MONEY_TAKEN">Money Taken</option>
-        </select>
+      <app-input
+        label="To Date"
+        type="date"
+        id="to-date"
+        placeholder="Select date"
+        [(ngModel)]="filters.toDate"
+        [ngModelOptions]="{standalone: true}"
+        (ngModelChange)="applyFilters()">
+      </app-input>
+
+      <app-select
+        label="Sort By"
+        [options]="sortOptions"
+        formControlName="sortOption">
+      </app-select>
+
+      <div class="filter-actions-inline">
+        <app-button variant="ghost" (click)="clearFilters()">
+          Clear Filters
+        </app-button>
       </div>
 
-      <div>
-        <label>Account</label>
-        <select [(ngModel)]="filters.accountId" (change)="applyFilters()">
-          <option value="">All Accounts</option>
-          <option *ngFor="let account of accounts" [value]="account.id">
-            {{ account.name }}
-          </option>
-        </select>
-      </div>
-
-      <div>
-        <label>From Date</label>
-        <input type="date" [(ngModel)]="filters.fromDate" (change)="applyFilters()" />
-      </div>
-
-      <div>
-        <label>To Date</label>
-        <input type="date" [(ngModel)]="filters.toDate" (change)="applyFilters()" />
-      </div>
-
-    </div>
-
-    <div class="filter-actions">
-      <button class="btn-clear" (click)="clearFilters()">Clear Filters</button>
-    </div>
-  </div>
+    </form>
+  </app-card>
 
   <!-- Loading State -->
-  <div class="loading-state" *ngIf="loading">
-    <div class="spinner"></div>
-    <p>Loading your transactions...</p>
+  <div class="loading-state-wrapper" *ngIf="loading">
+    <app-skeleton type="table" [count]="8"></app-skeleton>
   </div>
 
-  <!-- Transactions Table -->
-  <div class="transactions-wrapper" *ngIf="!loading && transactions.length > 0">
-    <table class="transactions-table">
-
-      <thead>
-        <tr>
-          <th>Date</th>
-          <th>Type</th>
-          <th>Description</th>
-          <th>Account</th>
-          <th>Category</th>
-          <th style="text-align: right;">Amount</th>
-          <th style="text-align: right;">Actions</th>
-        </tr>
-      </thead>
-
-      <tbody>
-        <tr *ngFor="let transaction of transactions">
-
-          <td class="date-cell" data-label="Date">
-            {{ transaction.transactionDate | date: 'MMM d, yyyy' }}
-          </td>
-
-          <td data-label="Type">
-            <span class="type-badge"
-                  [class.expense]="transaction.type === 'EXPENSE'"
-                  [class.money-given]="transaction.type === 'MONEY_GIVEN'"
-                  [class.money-taken]="transaction.type === 'MONEY_TAKEN'">
-              {{ formatType(transaction.type) }}
-            </span>
-          </td>
-
-          <td class="description-cell" data-label="Description">
-            {{ transaction.description || '—' }}
-          </td>
-
-          <td class="account-cell" data-label="Account">
-            {{ getAccountName(transaction) }}
-          </td>
-
-          <td class="category-cell" data-label="Category">
-            {{ getCategoryName(transaction) }}
-          </td>
-
-          <td class="amount-cell" data-label="Amount"
-              [class.amount-negative]="isNegativeTransaction(transaction.type)"
-              [class.amount-positive]="isPositiveTransaction(transaction.type)">
-            {{ formatAmount(transaction) }}
-          </td>
-
-          <td class="actions-cell" data-label="Actions">
-            <button class="action-btn" (click)="editTransaction(transaction.id)">
-              Edit
-            </button>
-            <button class="action-btn delete" (click)="requestDeleteTx(transaction.id)">
-              Delete
-            </button>
-          </td>
-
-        </tr>
-      </tbody>
-
-    </table>
-
-    <!-- Pagination — uses currentPage getter, Math exposed via this.Math -->
-    <div class="pagination">
-      <div class="pagination-info">
-        Showing {{ (currentPage - 1) * pageSize + 1 }} to
-        {{ Math.min(currentPage * pageSize, totalItems) }} of {{ totalItems }} transactions
-      </div>
-
-      <div class="pagination-controls">
-        <button
-          class="pagination-btn"
-          [disabled]="currentPage === 1"
-          (click)="goToPage(currentPage - 1)">
-          Previous
-        </button>
-
-        <button
-          class="pagination-btn"
-          [class.active]="currentPage === page"
-          *ngFor="let page of getPageNumbers()"
-          (click)="goToPage(page)">
-          {{ page }}
-        </button>
-
-        <button
-          class="pagination-btn"
-          [disabled]="currentPage === totalPages"
-          (click)="goToPage(currentPage + 1)">
-          Next
-        </button>
-      </div>
+  <!-- Transactions Table Section -->
+  <ng-container *ngIf="!loading">
+    
+    <!-- Search Bar -->
+    <div class="search-bar-container mb-4" *ngIf="transactions.length > 0 || searchTerm">
+      <app-input
+        id="search-input"
+        placeholder="Search description, category, or account..."
+        [ngModel]="searchTerm"
+        (ngModelChange)="onSearchChange($event)"
+        iconPrefix="search">
+      </app-input>
     </div>
-  </div>
 
-  <!-- Empty State -->
-  <div class="empty-state" *ngIf="!loading && transactions.length === 0">
-    <div class="empty-icon">📝</div>
-    <h3 class="empty-title">No transactions yet</h3>
-    <p class="empty-text">
-      {{ showFilters ? 'No transactions match your filters.' : 'Start by creating your first transaction.' }}
-    </p>
-    <button class="btn-add" routerLink="/transactions/new" *ngIf="!showFilters">
-      Add First Transaction
-    </button>
-  </div>
+    <!-- Data Table Card -->
+    <app-card class="transactions-table-card" *ngIf="filteredTransactions.length > 0">
+      <div class="table-scroll-wrapper">
+        <table class="premium-table">
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th>Type</th>
+              <th>Description</th>
+              <th>Account</th>
+              <th>Category</th>
+              <th class="amount-header">Amount</th>
+              <th class="actions-header">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let tx of filteredTransactions; trackBy: trackByTransaction" 
+                [class.expense]="tx.type === 'EXPENSE'"
+                [class.income]="tx.type === 'INCOME'"
+                [class.money-given]="tx.type === 'MONEY_GIVEN'"
+                [class.money-taken]="tx.type === 'MONEY_TAKEN'">
+              
+              <td class="date-cell" data-label="Date">
+                {{ tx.transactionDate | date: 'dd MMM yyyy' }}
+              </td>
+              
+              <td data-label="Type">
+                <span class="type-badge"
+                      [class.expense]="tx.type === 'EXPENSE'"
+                      [class.income]="tx.type === 'INCOME'"
+                      [class.money-given]="tx.type === 'MONEY_GIVEN'"
+                      [class.money-taken]="tx.type === 'MONEY_TAKEN'">
+                  {{ formatType(tx.type) }}
+                </span>
+              </td>
+              
+              <td class="description-cell" data-label="Description">
+                <span [class.text-muted]="!tx.description">{{ tx.description || 'No description' }}</span>
+              </td>
+              
+              <td class="account-cell" data-label="Account">
+                {{ getAccountName(tx) }}
+              </td>
+              
+              <td class="category-cell" data-label="Category">
+                {{ getCategoryName(tx) }}
+              </td>
+              
+              <td class="amount-cell text-right" data-label="Amount"
+                  [class.positive]="isPositiveTransaction(tx.type)"
+                  [class.negative]="isNegativeTransaction(tx.type)">
+                {{ formatAmount(tx) }}
+              </td>
+              
+              <td class="actions-cell text-right" data-label="Actions">
+                <button [matMenuTriggerFor]="txMenu" class="btn-more" aria-label="Transaction actions" title="More actions">
+                  <span class="material-icons">more_vert</span>
+                </button>
+                <mat-menu #txMenu="matMenu" xPosition="before" class="premium-menu">
+                  <button mat-menu-item (click)="editTransaction(tx.id)">
+                    <span class="material-icons">edit</span>
+                    <span>Edit Details</span>
+                  </button>
+                  <button mat-menu-item (click)="deleteTransaction(tx.id)" class="menu-item-danger">
+                    <span class="material-icons">delete</span>
+                    <span>Delete Record</span>
+                  </button>
+                </mat-menu>
+              </td>
+
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Pagination -->
+      <div class="pagination-container">
+        <div class="pagination-info text-sm text-muted">
+          {{ getPaginationSummary() }}
+        </div>
+
+        <div class="pagination-controls" *ngIf="totalPages > 1">
+          <app-button
+            variant="outline"
+            [disabled]="currentPage === 1"
+            (click)="goToPage(currentPage - 1)">
+            Previous
+          </app-button>
+
+          <button
+            class="page-number-btn"
+            [class.active]="currentPage === page"
+            *ngFor="let page of getPageNumbers()"
+            (click)="goToPage(page)">
+            {{ page }}
+          </button>
+
+          <app-button
+            variant="outline"
+            [disabled]="currentPage === totalPages"
+            (click)="goToPage(currentPage + 1)">
+            Next
+          </app-button>
+        </div>
+      </div>
+    </app-card>
+
+    <!-- Empty Search Results State -->
+    <app-empty-state
+      *ngIf="transactions.length > 0 && filteredTransactions.length === 0"
+      title="No search results"
+      text="Try adjusting your keywords or clearing the search box."
+      icon="search_off"
+      actionText="Clear Search"
+      (actionClicked)="onSearchChange('')">
+    </app-empty-state>
+
+    <!-- Empty Table State -->
+    <app-empty-state
+      *ngIf="transactions.length === 0"
+      [title]="showFilters ? 'No results found' : 'No transactions recorded'"
+      [text]="showFilters ? 'Adjust your date filters or choose a different type/account combination.' : 'Start tracking your financial workspace records.'"
+      icon="receipt_long"
+      [actionText]="showFilters ? 'Clear Filters' : 'Add Transaction'"
+      (actionClicked)="showFilters ? clearFilters() : navigateToAddTransaction()">
+    </app-empty-state>
+  </ng-container>
 
 </div>

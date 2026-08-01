@@ -1,11 +1,38 @@
-<div class="people-list-container">
+<!-- Inline Delete Confirm Modal -->
+<div class="confirm-overlay" *ngIf="confirmDeletePersonId">
+  <div class="confirm-modal">
+    <div class="confirm-icon"><span class="material-icons">delete_outline</span></div>
+    <h3 class="confirm-title">Delete Person?</h3>
+    <p class="confirm-text">This will permanently remove this person and their balance records. Cannot be undone.</p>
+    <div class="confirm-actions">
+      <button class="confirm-btn-cancel" (click)="cancelDeletePerson()">Cancel</button>
+      <button class="confirm-btn-delete" (click)="deletePerson(confirmDeletePersonId!)">Yes, Delete</button>
+    </div>
+  </div>
+</div>
+
+<div class="people-list-container page-container">
 
   <!-- Header -->
-  <div class="list-header">
-    <h1 class="page-title">People</h1>
-    <button class="btn-add" (click)="showAddForm = !showAddForm">
-      {{ showAddForm ? '✕ Cancel' : '+ Add Person' }}
+  <app-page-header
+    title="People"
+    subtitle="Track balances with people you share expenses with.">
+    <app-button variant="primary" (click)="showAddForm = !showAddForm">
+      <span class="material-icons">{{ showAddForm ? 'close' : 'person_add' }}</span>
+      {{ showAddForm ? 'Cancel' : 'Add Person' }}
+    </app-button>
+  </app-page-header>
+
+  <!-- Messages -->
+  <div class="alert alert--success mb-4" *ngIf="successMessage" role="status">
+    <span class="material-icons" style="font-size:18px; flex-shrink:0;">check_circle</span>
+    <span>{{ successMessage }}</span>
+    <button class="alert-close" (click)="successMessage = ''" aria-label="Dismiss">
+      <span class="material-icons">close</span>
     </button>
+  </div>
+  <div class="alert alert--error mb-4" *ngIf="errorMessage" role="alert">
+    <span>{{ errorMessage }}</span>
   </div>
 
   <!-- Add Person Form -->
@@ -19,15 +46,39 @@
         name="personName"
         required
       />
-      <button type="submit" [disabled]="!newPersonName || loading">
+      <button type="submit" [disabled]="!newPersonName || loading" class="btn-submit">
+        <span class="material-icons">person_add</span>
         {{ loading ? 'Adding...' : 'Add Person' }}
       </button>
     </form>
   </div>
 
-  <!-- Messages -->
-  <div class="error-message"   *ngIf="errorMessage">{{ errorMessage }}</div>
-  <div class="success-message" *ngIf="successMessage">{{ successMessage }}</div>
+  <!-- Financial Summary Row -->
+  <app-card class="people-summary-container-card mb-4" *ngIf="!loading && people.length > 0">
+    <div class="people-summary-cards">
+      <div class="summary-card owed">
+        <span class="summary-icon positive"><span class="material-icons">trending_up</span></span>
+        <div class="summary-info">
+          <span class="summary-label">Total Owed to You</span>
+          <span class="summary-value positive">{{ formatCurrency(totalOwedToYou) }}</span>
+        </div>
+      </div>
+      <div class="summary-card owing">
+        <span class="summary-icon negative"><span class="material-icons">trending_down</span></span>
+        <div class="summary-info">
+          <span class="summary-label">Total You Owe</span>
+          <span class="summary-value negative">{{ formatCurrency(totalYouOwe) }}</span>
+        </div>
+      </div>
+      <div class="summary-card count">
+        <span class="summary-icon brand"><span class="material-icons">people</span></span>
+        <div class="summary-info">
+          <span class="summary-label">Active Ledgers</span>
+          <span class="summary-value brand">{{ activeLedgers }}</span>
+        </div>
+      </div>
+    </div>
+  </app-card>
 
   <!-- Loading -->
   <div class="loading-state" *ngIf="loading && !people.length">
@@ -43,33 +94,37 @@
       <div class="person-header">
         <div class="person-avatar">{{ getInitials(person.name) }}</div>
         <div class="person-info">
-          <h3>{{ person.name }}</h3>
+          <h3>{{ person.name | titlecase }}</h3>
           <p class="person-meta">
-            {{ getBalance(person) !== 0 ? 'Has activity' : 'No activity yet' }}
+            {{ getBalance(person) !== 0 ? 'Active Ledger' : 'Settled' }}
           </p>
         </div>
       </div>
 
-      <div class="person-balance">
-        <span class="balance-label">Balance</span>
-        <span
-          class="balance-amount"
+      <div class="balance-hero">
+        <span class="balance-amount"
           [class.positive]="getBalance(person) > 0"
           [class.negative]="getBalance(person) < 0"
           [class.zero]="getBalance(person) === 0">
           {{ formatCurrency(person.balance) }}
         </span>
-      </div>
-
-      <div class="balance-hint">
-        <span *ngIf="getBalance(person) > 0">They owe you</span>
-        <span *ngIf="getBalance(person) < 0">You owe them</span>
-        <span *ngIf="getBalance(person) === 0">All settled up</span>
+        <div class="balance-hint"
+             [class.hint-positive]="getBalance(person) > 0"
+             [class.hint-negative]="getBalance(person) < 0">
+          <span *ngIf="getBalance(person) > 0">They owe you</span>
+          <span *ngIf="getBalance(person) < 0">You owe them</span>
+          <span *ngIf="getBalance(person) === 0">All settled up</span>
+        </div>
       </div>
 
       <div class="person-actions">
+        <button class="btn-qr" *ngIf="getBalance(person) > 0" (click)="openQRCollectModal(person, $event)">
+          <span class="material-icons">qr_code</span> Collect via QR
+        </button>
         <button class="btn-view"   (click)="viewDetails(person.id)">View Ledger</button>
-        <button class="btn-delete" (click)="deletePerson(person.id)">Delete</button>
+        <button class="btn-delete" (click)="requestDeletePerson(person.id)">
+          <span class="material-icons">delete_outline</span> Delete
+        </button>
       </div>
 
     </div>
@@ -77,11 +132,14 @@
 
   <!-- Empty State -->
   <div class="empty-state" *ngIf="!loading && people.length === 0">
-    <div class="empty-icon">👥</div>
+    <div class="empty-icon-wrap">
+      <span class="material-icons">people_outline</span>
+    </div>
     <h3 class="empty-title">No people yet</h3>
-    <p class="empty-text">Add people to track money you've given or taken</p>
-    <button class="btn-add" (click)="showAddForm = true" *ngIf="!showAddForm">
+    <p class="empty-text">Add people to track money you've lent or borrowed.</p>
+    <button class="btn btn--outline" (click)="showAddForm = true" *ngIf="!showAddForm">
       Add First Person
     </button>
   </div>
-</div>
+
+</div>

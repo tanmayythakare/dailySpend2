@@ -9,22 +9,33 @@
 .person-detail__header {
   display: flex;
   align-items: center;
-  gap: 16px;
   margin-bottom: 24px;
 }
 
 .person-detail__back-btn {
-  background: white;
-  border: 1px solid #e5e7eb;
-  border-radius: 8px;
-  padding: 8px 14px;
+  background: transparent;
+  border: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
   cursor: pointer;
-  font-weight: 500;
-}
-
-.page-title {
-  font-size: 28px;
-  font-weight: 700;
+  font-weight: 600;
+  color: var(--gray-600);
+  padding: 6px 12px;
+  border-radius: var(--radius-md);
+  transition: all var(--transition-fast);
+  margin-left: -12px; /* aligns left edge with content container */
+  
+  &:hover {
+    color: var(--brand-700);
+    background-color: var(--brand-50);
+    transform: translateX(-3px);
+  }
+  
+  .material-icons {
+    font-size: 18px;
+    vertical-align: middle;
+  }
 }
 
 /* Summary Card */
@@ -32,47 +43,87 @@
 .person-detail__summary-card {
   display: flex;
   align-items: center;
-  gap: 20px;
-  background: white;
-  padding: 24px;
-  border-radius: 14px;
-  box-shadow: 0 8px 20px rgba(0,0,0,0.05);
-  margin-bottom: 24px;
+  justify-content: space-between; /* separate info left and balance right */
+  background: var(--surface-card);
+  padding: 24px var(--space-5);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--gray-200);
+  box-shadow: var(--shadow-sm);
+  margin-bottom: 28px;
+}
+
+.person-detail__profile-info {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+}
+
+.person-detail__person-name {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--gray-900);
+  margin: 0 0 2px 0;
+}
+
+.person-detail__person-subtitle {
+  font-size: 13px;
+  color: var(--gray-500);
+  font-weight: 500;
+}
+
+.person-detail__balance-box {
+  text-align: right;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.person-detail__balance-label {
+  font-size: var(--font-size-meta);
+  color: var(--gray-500);
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
 }
 
 .person-detail__avatar-lg {
-  width: 64px;
-  height: 64px;
+  width: 60px;
+  height: 60px;
   border-radius: 50%;
-  background: #6366f1;
+  background: var(--brand-gradient);
   color: white;
-  font-size: 28px;
+  font-size: 24px;
   display: flex;
   align-items: center;
   justify-content: center;
   font-weight: bold;
+  box-shadow: 0 4px 12px rgba(13, 148, 136, 0.2); /* Deep Teal brand shadow match */
 }
 
 .person-detail__balance-amount-lg {
-  font-size: 32px;
+  font-size: 28px;
   font-weight: 700;
+  font-family: var(--font-sans);
+  letter-spacing: -0.5px;
+  line-height: 1.2;
 }
 
 .person-detail__balance-amount-lg--positive {
-  color: #16a34a;
+  color: var(--positive-text);
 }
 
 .person-detail__balance-amount-lg--negative {
-  color: #dc2626;
+  color: var(--negative-text);
 }
 
 /* Ledger Card */
 
 .person-detail__ledger-card {
-  background: white;
+  background: var(--surface-card);
   padding: 24px;
-  border-radius: 14px;
-  box-shadow: 0 8px 20px rgba(0,0,0,0.05);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--gray-200);
+  box-shadow: var(--shadow-sm);
 }
 
 .person-detail__ledger-header {
@@ -90,22 +141,61 @@
 
 .person-detail__ledger-table th {
   text-align: left;
-  color: #6b7280;
+  color: var(--gray-500);
   font-weight: 600;
   padding-bottom: 10px;
 }
 
 .person-detail__ledger-table td {
   padding: 12px 0;
-  border-top: 1px solid #f1f5f9;
+  border-top: 1px solid var(--gray-100);
+  color: var(--gray-850);
 }
 
 .positive {
-  color: #16a34a;
+  color: var(--positive-text) !important;
   font-weight: 600;
 }
 
 .negative {
-  color: #dc2626;
+  color: var(--negative-text) !important;
   font-weight: 600;
+}
+
+.text-right {
+  text-align: right !important;
+}
+
+.amount-cell {
+  font-family: var(--font-mono);
+  font-weight: 600;
+}
+
+/* Type badges inside table */
+.type-badge {
+  display: inline-flex;
+  padding: 6px 12px;
+  border-radius: var(--radius-full);
+  font-size: var(--font-size-caption);
+  font-weight: 600;
+  white-space: nowrap;
+  letter-spacing: 0.2px;
+
+  &.expense { background-color: var(--negative-bg); color: var(--negative-text); }
+  &.money-given { background-color: var(--negative-bg); color: var(--negative-text); }
+  &.money-taken { background-color: var(--positive-bg); color: var(--positive-text); }
+}
+
+:host-context(.dark-theme) {
+  .person-detail__back-btn {
+    background-color: var(--surface-card) !important;
+    border-color: rgba(255, 255, 255, 0.08) !important;
+    color: var(--gray-800) !important;
+    &:hover {
+      background-color: var(--gray-100) !important;
+    }
+  }
+  .person-detail__ledger-table td {
+    border-top-color: rgba(255, 255, 255, 0.08) !important;
+  }
 }

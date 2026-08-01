@@ -4,28 +4,38 @@
   <aside class="sidebar" [class.collapsed]="isCollapsed" [class.open]="isMobileOpen">
 
     <div class="sidebar-header">
-      <div class="logo-icon">₹</div>
+      <img src="assets/logo.png" alt="DailySpend Logo" style="height: 32px; width: 32px; object-fit: contain; border-radius: 8px; flex-shrink: 0;">
       <div class="logo-text" *ngIf="!isCollapsed">DailySpend</div>
     </div>
 
     <nav class="nav">
       <a routerLink="/dashboard" routerLinkActive="active" class="nav-item" (click)="closeMobileSidebar()">
-        <span class="nav-icon">🏠</span>
+        <span class="nav-icon"><span class="material-icons">dashboard</span></span>
         <span class="nav-label" *ngIf="!isCollapsed">Dashboard</span>
       </a>
 
       <a routerLink="/transactions" routerLinkActive="active" class="nav-item" (click)="closeMobileSidebar()">
-        <span class="nav-icon">🧾</span>
+        <span class="nav-icon"><span class="material-icons">receipt_long</span></span>
         <span class="nav-label" *ngIf="!isCollapsed">Transactions</span>
       </a>
 
       <a routerLink="/people" routerLinkActive="active" class="nav-item" (click)="closeMobileSidebar()">
-        <span class="nav-icon">👥</span>
+        <span class="nav-icon"><span class="material-icons">people</span></span>
         <span class="nav-label" *ngIf="!isCollapsed">People</span>
       </a>
 
+      <a routerLink="/split" routerLinkActive="active" class="nav-item" (click)="closeMobileSidebar()">
+        <span class="nav-icon"><span class="material-icons">vertical_split</span></span>
+        <span class="nav-label" *ngIf="!isCollapsed">Split Bill</span>
+      </a>
+
+      <a routerLink="/schedules" routerLinkActive="active" class="nav-item" (click)="closeMobileSidebar()">
+        <span class="nav-icon"><span class="material-icons">autorenew</span></span>
+        <span class="nav-label" *ngIf="!isCollapsed">Schedules</span>
+      </a>
+
       <a routerLink="/reports" routerLinkActive="active" class="nav-item" (click)="closeMobileSidebar()">
-        <span class="nav-icon">📊</span>
+        <span class="nav-icon"><span class="material-icons">pie_chart</span></span>
         <span class="nav-label" *ngIf="!isCollapsed">Reports</span>
       </a>
     </nav>
@@ -33,9 +43,18 @@
     <!-- Pushes logout to bottom -->
     <div class="sidebar-spacer"></div>
 
+    <!-- User Avatar Widget -->
+    <div class="user-avatar-widget" *ngIf="!isCollapsed && username">
+      <div class="widget-avatar">{{ username[0].toUpperCase() }}</div>
+      <div class="widget-info">
+        <div class="widget-name">{{ username | titlecase }}</div>
+        <div class="widget-email">{{ username.toLowerCase() }}&#64;dailyspend.com</div>
+      </div>
+    </div>
+
     <div class="nav nav-bottom">
       <a class="nav-item nav-logout" (click)="logout()">
-        <span class="nav-icon">🚪</span>
+        <span class="nav-icon"><span class="material-icons">logout</span></span>
         <span class="nav-label" *ngIf="!isCollapsed">Logout</span>
       </a>
     </div>
@@ -49,10 +68,22 @@
   <div class="main">
 
     <header class="topbar">
-      <button class="menu-toggle" (click)="toggleSidebar()">☰</button>
+      <button class="menu-toggle" (click)="toggleSidebar()" title="Toggle Sidebar" aria-label="Toggle sidebar menu">
+        <span class="material-icons">menu</span>
+      </button>
       <div class="topbar-title">{{ pageTitle }}</div>
       <div class="topbar-right">
+        <button class="theme-toggle-btn" (click)="toggleTheme()" [title]="'Theme: ' + activeTheme" aria-label="Toggle theme">
+          <span class="material-icons" *ngIf="activeTheme === 'light'">light_mode</span>
+          <span class="material-icons" *ngIf="activeTheme === 'dark'">dark_mode</span>
+          <span class="material-icons" *ngIf="activeTheme === 'system'">settings_brightness</span>
+        </button>
         <span class="currency">₹ INR</span>
+        <div class="user-profile" *ngIf="username" routerLink="/settings" style="cursor: pointer;" aria-haspopup="menu" aria-expanded="false">
+          <div class="user-avatar">{{ username[0].toUpperCase() }}</div>
+          <span class="username">{{ username | titlecase }}</span>
+          <span class="material-icons dropdown-chevron" style="font-size: 16px; color: var(--brand-700);">expand_more</span>
+        </div>
       </div>
     </header>
 

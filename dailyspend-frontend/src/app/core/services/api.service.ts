@@ -19,6 +19,10 @@ export class ApiService {
     return this.http.post<T>(`${this.baseUrl}${endpoint}`, body, options);
   }
 
+  patch<T>(endpoint: string, body: any, options?: object): Observable<T> {
+    return this.http.patch<T>(`${this.baseUrl}${endpoint}`, body, options);
+  }
+
   put<T>(endpoint: string, body: any, options?: object): Observable<T> {
     return this.http.put<T>(`${this.baseUrl}${endpoint}`, body, options);
   }

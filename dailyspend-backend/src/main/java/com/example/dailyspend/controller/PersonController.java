@@ -4,6 +4,7 @@ import com.example.dailyspend.dto.PersonBalanceDto;
 import com.example.dailyspend.dto.PersonRequest;
 import com.example.dailyspend.dto.PersonResponse;
 import com.example.dailyspend.dto.TransactionResponse;  // ✅ ADD THIS
+import com.example.dailyspend.dto.UpiQrPayloadDto;
 import com.example.dailyspend.entity.Person;
 import com.example.dailyspend.service.PersonService;
 import jakarta.validation.Valid;
@@ -90,6 +91,12 @@ public class PersonController {
     public ResponseEntity<PersonBalanceDto> getPersonWithBalance(@PathVariable Long id) {
         PersonBalanceDto personBalance = personService.getPersonWithBalance(id);
         return ResponseEntity.ok(personBalance);
+    }
+
+    @GetMapping("/{id}/qr-payload")
+    public ResponseEntity<UpiQrPayloadDto> getPersonQrPayload(@PathVariable Long id) {
+        UpiQrPayloadDto payload = personService.getQrPayload(id);
+        return ResponseEntity.ok(payload);
     }
 
     // -------- MAPPER --------

@@ -1,108 +1,163 @@
-<div class="page-container">
+<div class="transaction-form-container page-container">
 
-  <!-- Header — back link left, title centre -->
-  <div class="transaction-form__header">
-    <a class="transaction-form__back-btn" routerLink="/transactions">
-      ← Back to Transactions
-    </a>
-    <span class="transaction-form__title">
-      {{ isEditMode ? 'Edit Transaction' : 'New Transaction' }}
-    </span>
-    <span></span><!-- spacer keeps title centred -->
-  </div>
+  <!-- Header -->
+  <app-page-header 
+    [title]="isEditMode ? 'Edit Transaction' : 'New Transaction'"
+    subtitle="Record a new expense, income, or transfer.">
+    <app-button variant="outline" routerLink="/transactions">
+      <span class="material-icons">arrow_back</span> Back to Transactions
+    </app-button>
+  </app-page-header>
 
-  <!-- Form Card -->
-  <div class="transaction-form__card">
-
+  <!-- Form Card Wrapper -->
+  <app-card class="form-card">
+    
     <!-- Messages -->
-    <div class="alert alert--error"   *ngIf="errorMessage">{{ errorMessage }}</div>
-    <div class="alert alert--success" *ngIf="successMessage">{{ successMessage }}</div>
+    <div class="alert alert--error mb-4" *ngIf="errorMessage">{{ errorMessage }}</div>
+    <div class="alert alert--success mb-4" *ngIf="successMessage">{{ successMessage }}</div>
 
-    <!-- Type Selector — pill toggle -->
-    <div class="transaction-form__type-selector">
-
+    <!-- Segmented Toggle Buttons (Pill Selectors) -->
+    <div class="type-segmented-control mb-5">
       <button type="button"
-        class="transaction-form__type-option"
+        class="segmented-btn"
         [class.active]="transactionData.type === 'EXPENSE'"
-        [class.active-expense]="transactionData.type === 'EXPENSE'"
+        [class.btn-expense]="transactionData.type === 'EXPENSE'"
         (click)="selectType('EXPENSE')">
-        <span class="type-icon">💸</span>
+        <span class="segmented-icon"><span class="material-icons">arrow_downward</span></span>
         Expense
       </button>
 
       <button type="button"
-        class="transaction-form__type-option"
+        class="segmented-btn"
+        [class.active]="transactionData.type === 'INCOME'"
+        [class.btn-income]="transactionData.type === 'INCOME'"
+        (click)="selectType('INCOME')">
+        <span class="segmented-icon"><span class="material-icons">arrow_upward</span></span>
+        Income
+      </button>
+
+      <button type="button"
+        class="segmented-btn"
         [class.active]="transactionData.type === 'MONEY_GIVEN'"
+        [class.btn-given]="transactionData.type === 'MONEY_GIVEN'"
         (click)="selectType('MONEY_GIVEN')">
-        <span class="type-icon">➡️</span>
+        <span class="segmented-icon"><span class="material-icons">arrow_downward</span></span>
         Money Given
       </button>
 
       <button type="button"
-        class="transaction-form__type-option"
+        class="segmented-btn"
         [class.active]="transactionData.type === 'MONEY_TAKEN'"
-        [class.active-money-taken]="transactionData.type === 'MONEY_TAKEN'"
+        [class.btn-taken]="transactionData.type === 'MONEY_TAKEN'"
         (click)="selectType('MONEY_TAKEN')">
-        <span class="type-icon">⬅️</span>
+        <span class="segmented-icon"><span class="material-icons">arrow_upward</span></span>
         Money Taken
       </button>
-
     </div>
 
-    <!-- Fields -->
-    <form class="transaction-form__fields" (ngSubmit)="onSubmit()">
+    <!-- Fields Form -->
+    <form (submit)="onSubmit()" class="form-fields-layout">
+      
+      <!-- Account + Amount row -->
+      <div class="form-fields-row">
+        <app-select
+          id="account"
+          label="Account"
+          placeholder="Select an account"
+          [options]="accountOptions"
+          [(ngModel)]="transactionData.accountId"
+          name="account"
+          [required]="true"
+          [disabled]="loading">
+        </app-select>
 
-      <!-- Account + Amount -->
-      <div class="transaction-form__row">
+        <app-input
+          id="amount"
+          label="Amount"
+          type="number"
+          placeholder="Enter amount"
+          prefix="₹"
+          size="large"
+          [(ngModel)]="transactionData.amount"
+          name="amount"
+          [required]="true"
+          [disabled]="loading">
+        </app-input>
+      </div>
 
-        <div class="form-field">
-          <label for="account">Account <span style="color:var(--negative)">*</span></label>
-          <select id="account" name="account"
-            [(ngModel)]="transactionData.accountId" required>
-            <option [ngValue]="null" disabled>Select an account</option>
-            <option *ngFor="let account of accounts" [ngValue]="account.id">
-              {{ account.name }} ({{ formatCurrency(account.balance) }})
-            </option>
-          </select>
+        <!-- Category/Person + Date row -->
+        <div class="form-fields-row">
+          <!-- Category (EXPENSE and INCOME) -->
+          <div *ngIf="transactionData.type === 'EXPENSE' || transactionData.type === 'INCOME'">
+            <app-select
+              id="category"
+              [label]="categoryLabel"
+              [placeholder]="categoryLabel"
+              [options]="filteredCategoryOptions"
+              [(ngModel)]="transactionData.categoryId"
+              name="category"
+              [allowEmpty]="true"
+              [emptyLabel]="categoryLabel"
+              [disabled]="loading">
+            </app-select>
+          </div>
+
+          <!-- Person (MONEY_GIVEN / MONEY_TAKEN) -->
+          <div *ngIf="transactionData.type !== 'EXPENSE' && transactionData.type !== 'INCOME'">
+            <app-select
+              id="person"
+              label="Person"
+              placeholder="Select a person"
+              [options]="personOptions"
+              [(ngModel)]="transactionData.personId"
+              name="person"
+              [required]="true"
+              [disabled]="loading">
+            </app-select>
+          </div>
+
+        <!-- Date -->
+        <app-input
+          id="date"
+          label="Transaction Date"
+          type="date"
+          [(ngModel)]="transactionData.transactionDate"
+          name="date"
+          [required]="true"
+          [disabled]="loading">
+        </app-input>
+      </div>
+
+      <!-- Recurring Transaction Options -->
+      <div class="recurring-section mb-4" *ngIf="!isEditMode && (transactionData.type === 'EXPENSE' || transactionData.type === 'INCOME')">
+        <div class="form-checkbox-field">
+          <label class="checkbox-container">
+            <input type="checkbox" [(ngModel)]="isRecurring" name="isRecurring" [disabled]="loading">
+            Is this a recurring transaction?
+          </label>
         </div>
 
-        <div class="form-field transaction-form__amount-field">
-          <label for="amount">Amount <span style="color:var(--negative)">*</span></label>
-          <input type="number" id="amount" name="amount"
-            [(ngModel)]="transactionData.amount"
-            placeholder="0.00" step="0.01" min="0.01" required />
+        <div class="recurring-details form-fields-row mt-3" *ngIf="isRecurring">
+          <div class="form-field">
+            <label for="frequency">Frequency</label>
+            <select id="frequency" name="frequency" [(ngModel)]="recurringFrequency" class="input-field" [disabled]="loading" style="padding: 9px 12px; border: 1.5px solid var(--border); border-radius: 8px; font-size: 14px; font-family: inherit; color: var(--text); outline: none; width: 100%;">
+              <option value="DAILY">Daily</option>
+              <option value="WEEKLY">Weekly</option>
+              <option value="MONTHLY">Monthly</option>
+              <option value="QUARTERLY">Quarterly</option>
+              <option value="YEARLY">Yearly</option>
+            </select>
+          </div>
+
+          <app-input
+            id="recurringEndDate"
+            label="End Date (Optional)"
+            type="date"
+            [(ngModel)]="recurringEndDate"
+            name="recurringEndDate"
+            [disabled]="loading">
+          </app-input>
         </div>
-
-      </div>
-
-      <!-- Category (EXPENSE only) -->
-      <div class="form-field" *ngIf="transactionData.type === 'EXPENSE'">
-        <label for="category">Category</label>
-        <select id="category" name="category" [(ngModel)]="transactionData.categoryId">
-          <option [ngValue]="null">Select a category (optional)</option>
-          <option *ngFor="let category of categories" [ngValue]="category.id">
-            {{ category.name }}
-          </option>
-        </select>
-      </div>
-
-      <!-- Person (MONEY_GIVEN / MONEY_TAKEN) -->
-      <div class="form-field" *ngIf="transactionData.type !== 'EXPENSE'">
-        <label for="person">Person <span style="color:var(--negative)">*</span></label>
-        <select id="person" name="person"
-          [(ngModel)]="transactionData.personId" required>
-          <option [ngValue]="null" disabled>Select a person</option>
-          <option *ngFor="let person of people" [ngValue]="person.id">
-            {{ person.name }}
-          </option>
-        </select>
-      </div>
-
-      <!-- Date -->
-      <div class="form-field">
-        <label for="date">Transaction Date <span style="color:var(--negative)">*</span></label>
-        <input type="date" id="date" name="date"
-          [(ngModel)]="transactionData.transactionDate" required />
       </div>
 
       <!-- Description -->
@@ -110,21 +165,35 @@
         <label for="description">Description</label>
         <textarea id="description" name="description"
           [(ngModel)]="transactionData.description"
-          placeholder="Add notes about this transaction..."
-          rows="3"></textarea>
+          placeholder="Optional notes (merchant, reason, etc.)"
+          rows="3"
+          [disabled]="loading"></textarea>
       </div>
 
-      <!-- Actions -->
-      <div class="transaction-form__actions">
-        <button type="button" class="btn btn--outline cancel-btn" routerLink="/transactions">
+      <!-- Validation Hint -->
+      <div class="info-callout info-callout--info" *ngIf="!isFormValid()">
+        <span class="material-icons info-callout-icon">info</span>
+        <div class="info-callout-content">
+          Please fill required fields to enable submitting:
+          <strong *ngIf="!transactionData.accountId">Account</strong>
+          <strong *ngIf="transactionData.amount === null || transactionData.amount <= 0">Amount</strong>
+          <strong *ngIf="!transactionData.transactionDate">Date</strong>
+          <strong *ngIf="transactionData.type !== 'EXPENSE' && transactionData.type !== 'INCOME' && !transactionData.personId">Person</strong>
+        </div>
+      </div>
+
+      <!-- Form Action Controls -->
+      <div class="form-actions-bar mt-5">
+        <app-button variant="outline" routerLink="/transactions" [disabled]="loading">
           Cancel
-        </button>
-        <button type="submit" class="btn btn--primary submit-btn"
-          [disabled]="loading || !isFormValid()">
-          {{ loading ? 'Saving...' : (isEditMode ? 'Update Transaction' : 'Create Transaction') }}
-        </button>
+        </app-button>
+        <app-button type="submit" [loading]="loading" [disabled]="!isFormValid()">
+          {{ isEditMode ? 'Update Transaction' : 'Add Transaction' }}
+        </app-button>
       </div>
 
     </form>
-  </div>
+
+  </app-card>
+
 </div>

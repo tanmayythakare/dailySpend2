@@ -1,0 +1,109 @@
+<div class="schedules-container page-container animate-fade-in">
+  <!-- Header -->
+  <app-page-header 
+    title="Recurring Schedules"
+    subtitle="Automate your income and expenses. Track repeating commitments in one place.">
+    <app-button variant="primary" routerLink="/transactions/new">
+      <span class="material-icons">add</span> Create Recurring
+    </app-button>
+  </app-page-header>
+
+  <!-- Error Alerts -->
+  <div class="alert alert--error mb-4" *ngIf="errorMessage">{{ errorMessage }}</div>
+
+  <!-- Summary Cards -->
+  <div class="stats-row mb-6">
+    <app-card class="stat-card">
+      <div class="stat-label">Active Schedules</div>
+      <div class="stat-value">{{ totalActiveCount }}</div>
+      <div class="stat-desc">Templates currently generating entries</div>
+    </app-card>
+
+    <app-card class="stat-card">
+      <div class="stat-label">Est. Monthly Commitment</div>
+      <div class="stat-value">{{ formatCurrency(monthlyCommitment) }}</div>
+      <div class="stat-desc">Projected cash flow impact per month</div>
+    </app-card>
+  </div>
+
+  <!-- Loading State -->
+  <div class="loading-wrapper py-8" *ngIf="loading">
+    <mat-spinner diameter="40"></mat-spinner>
+    <p class="mt-2 text-gray-500">Loading schedules...</p>
+  </div>
+
+  <!-- Empty State -->
+  <app-empty-state
+    *ngIf="!loading && schedules.length === 0"
+    icon="autorenew"
+    title="No recurring schedules"
+    description="You haven't set up any recurring income or expenses yet. Create one from the transaction form.">
+    <app-button variant="primary" routerLink="/transactions/new" class="mt-4">
+      Add Your First Schedule
+    </app-button>
+  </app-empty-state>
+
+  <!-- Grid of Schedules -->
+  <div class="schedules-grid" *ngIf="!loading && schedules.length > 0">
+    <app-card class="schedule-card" *ngFor="let item of schedules; trackBy: trackByFn" [class.paused]="item.status === 'PAUSED'">
+      
+      <!-- Card Header -->
+      <div class="schedule-card-header mb-3">
+        <div class="title-section">
+          <h3 class="schedule-desc">{{ item.description }}</h3>
+          <div class="badge-row mt-1">
+            <span class="badge" [class.badge-expense]="item.type === 'EXPENSE'" [class.badge-income]="item.type === 'INCOME'">
+              {{ item.type }}
+            </span>
+            <span class="badge badge-frequency">{{ item.frequency }}</span>
+          </div>
+        </div>
+        <div class="amount-section" [class.income]="item.type === 'INCOME'" [class.expense]="item.type === 'EXPENSE'">
+          {{ item.type === 'INCOME' ? '+' : '-' }}{{ item.formattedAmount }}
+        </div>
+      </div>
+
+      <!-- Card Content / Details -->
+      <div class="schedule-details mb-4">
+        <div class="detail-row">
+          <span class="detail-label">Account:</span>
+          <span class="detail-value">{{ item.accountName }}</span>
+        </div>
+        <div class="detail-row" *ngIf="item.categoryName">
+          <span class="detail-label">Category:</span>
+          <span class="detail-value">{{ item.categoryName }}</span>
+        </div>
+        <div class="detail-row">
+          <span class="detail-label">Start Date:</span>
+          <span class="detail-value">{{ item.startDate }}</span>
+        </div>
+        <div class="detail-row" *ngIf="item.endDate">
+          <span class="detail-label">End Date:</span>
+          <span class="detail-value">{{ item.endDate }}</span>
+        </div>
+        <div class="detail-row" *ngIf="item.status === 'ACTIVE'">
+          <span class="detail-label text-warning">Next Execution:</span>
+          <span class="detail-value font-medium">{{ item.nextExecutionDate }}</span>
+        </div>
+      </div>
+
+      <!-- Card Actions -->
+      <div class="schedule-actions pt-3">
+        <button type="button" 
+          class="btn-action" 
+          [class.btn-pause]="item.status === 'ACTIVE'" 
+          [class.btn-resume]="item.status === 'PAUSED'"
+          (click)="toggleStatus(item)">
+          <span class="material-icons">{{ item.status === 'ACTIVE' ? 'pause' : 'play_arrow' }}</span>
+          {{ item.status === 'ACTIVE' ? 'Pause' : 'Resume' }}
+        </button>
+
+        <button type="button" class="btn-action btn-delete" (click)="deleteSchedule(item.id)">
+          <span class="material-icons">delete</span>
+          Delete
+        </button>
+      </div>
+
+    </app-card>
+  </div>
+</div>

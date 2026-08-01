@@ -83,6 +83,27 @@ export const routes: Routes = [
         loadComponent: () =>
           import('./features/accounts/account-detail/account-detail.component')
             .then(m => m.AccountDetailComponent)
+      },
+
+      {
+        path: 'split',
+        loadComponent: () =>
+          import('./features/split/bill-splitter.component')
+            .then(m => m.BillSplitterComponent)
+      },
+
+      {
+        path: 'schedules',
+        loadComponent: () =>
+          import('./features/schedules/schedules.component')
+            .then(m => m.SchedulesComponent)
+      },
+
+      {
+        path: 'settings',
+        loadComponent: () =>
+          import('./features/settings/settings.component')
+            .then(m => m.SettingsComponent)
       }
 
     ]

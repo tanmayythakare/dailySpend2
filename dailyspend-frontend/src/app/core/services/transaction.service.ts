@@ -6,7 +6,8 @@ import {
   Transaction,
   ExpenseRequest,
   MoneyGivenRequest,
-  MoneyTakenRequest
+  MoneyTakenRequest,
+  IncomeRequest
 } from '../../models/transaction.model';
 
 @Injectable({
@@ -50,6 +51,10 @@ export class TransactionService {
     return this.http.post<Transaction>(`${this.apiUrl}/expense`, request);
   }
 
+  createIncome(request: IncomeRequest): Observable<Transaction> {
+    return this.http.post<Transaction>(`${this.apiUrl}/income`, request);
+  }
+
   createMoneyGiven(request: MoneyGivenRequest): Observable<Transaction> {
     return this.http.post<Transaction>(`${this.apiUrl}/money-given`, request);
   }
@@ -80,6 +85,15 @@ export class TransactionService {
           transactionDate: payload.transactionDate
         });
 
+      case 'INCOME':
+        return this.http.post<Transaction>(`${this.apiUrl}/income`, {
+          accountId: payload.accountId,
+          categoryId: payload.categoryId ?? null,
+          amount: payload.amount,
+          description: payload.description,
+          transactionDate: payload.transactionDate
+        });
+
       case 'EXPENSE':
       default:
         return this.http.post<Transaction>(`${this.apiUrl}/expense`, {
@@ -101,5 +115,10 @@ export class TransactionService {
   // ── Delete ───────────────────────────────────────────────────────────────
   delete(id: number): Observable<void> {
     return this.http.delete<void>(`${this.apiUrl}/${id}`);
+  }
+
+  // ── Batch Transactions ───────────────────────────────────────────────────
+  createBatchTransactions(requests: any[]): Observable<any[]> {
+    return this.http.post<any[]>(`${this.apiUrl}/batch`, requests);
   }
 }

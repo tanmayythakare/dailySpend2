@@ -35,6 +35,10 @@ public class SecurityUtils {
 
         Object principal = authentication.getPrincipal();
 
+        if (principal instanceof com.example.dailyspend.config.CustomUserDetails customUserDetails) {
+            return customUserDetails.getId();
+        }
+
         String username;
 
         if (principal instanceof UserDetails userDetails) {

@@ -75,6 +75,27 @@ public class TransactionController {
                 .body(toResponse(tx));
     }
 
+    @PostMapping("/income")
+    public ResponseEntity<TransactionResponse> createIncome(
+            @Valid @RequestBody IncomeRequestDto request) {
+
+        Transaction tx = transactionService.createIncome(request);
+        return ResponseEntity
+                .status(HttpStatus.CREATED)
+                .body(toResponse(tx));
+    }
+
+    @PostMapping("/batch")
+    public ResponseEntity<List<TransactionResponse>> createBatchTransactions(
+            @RequestBody List<BatchTransactionItemDto> requests) {
+        List<Transaction> created = transactionService.createBatchTransactions(requests);
+        List<TransactionResponse> response = new java.util.ArrayList<>();
+        for (Transaction tx : created) {
+            response.add(toResponse(tx));
+        }
+        return ResponseEntity.status(HttpStatus.CREATED).body(response);
+    }
+
     // -------- UPDATE --------
 
     @PutMapping("/{id}")

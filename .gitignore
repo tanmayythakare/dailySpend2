@@ -1,19 +1,24 @@
-# OS
+# ─── OS ────────────────────────────────────────────────────────────────────────
 .DS_Store
+Thumbs.db
 
-# Java
-target/
-*.log
-
-# Node / Angular
-node_modules/
-dist/
-
-# Env
+# ─── Secrets & Environment ─────────────────────────────────────────────────────
 .env
 application-local.yml
 
-# IDE
+# ─── Java / Maven ──────────────────────────────────────────────────────────────
+target/
+*.log
+*.class
+
+# ─── Node / Angular ────────────────────────────────────────────────────────────
+node_modules/
+dist/
+
+# ─── IDE ───────────────────────────────────────────────────────────────────────
 .idea/
 .vscode/
-/.metadata/
+*.iml
+*.ipr
+*.iws
+.metadata/

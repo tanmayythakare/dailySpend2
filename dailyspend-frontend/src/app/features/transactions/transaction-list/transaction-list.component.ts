@@ -1,10 +1,8 @@
 import { Component, OnInit, OnDestroy, HostListener } from '@angular/core';
-import { CommonModule } from '@angular/common';
-import { FormBuilder, FormGroup, ReactiveFormsModule } from '@angular/forms';
-import { RouterLink, Router } from '@angular/router';
-import { FormsModule } from '@angular/forms';
-import { Subject, takeUntil } from 'rxjs';
-import { MatDialog, MatDialogModule } from '@angular/material/dialog';
+import { FormBuilder, FormGroup } from '@angular/forms';
+import { Router } from '@angular/router';
+import { Subject, takeUntil, debounceTime, distinctUntilChanged } from 'rxjs';
+import { MatDialog } from '@angular/material/dialog';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { TransactionService } from '../../../core/services/transaction.service';
 import { AccountService } from '../../../core/services/account.service';
@@ -14,11 +12,13 @@ import { Transaction } from '../../../models/transaction.model';
 import { Account } from '../../../models/account.model';
 import { Category } from '../../../models/category.model';
 import { Person } from '../../../models/person.model';
+import { SHARED_IMPORTS } from '../../../shared/shared.imports';
+import { ConfirmationDialogComponent } from '../../../shared/components/confirmation-dialog/confirmation-dialog.component';
 
 @Component({
   selector: 'app-transaction-list',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, FormsModule, RouterLink, MatDialogModule],
+  imports: [SHARED_IMPORTS, ConfirmationDialogComponent],
   templateUrl: './transaction-list.component.html',
   styleUrls: ['./transaction-list.component.scss']
 })
@@ -41,24 +41,56 @@ export class TransactionListComponent implements OnInit, OnDestroy {
   get currentPage(): number { return this.pageIndex + 1; }
   get totalPages(): number  { return Math.ceil(this.totalItems / this.pageSize) || 1; }
 
-  // Single filter source of truth (ngModel-based, drives the filter panel)
+  getPaginationSummary(): string {
+    if (this.totalPages <= 1) {
+      return `${this.totalItems} transaction${this.totalItems !== 1 ? 's' : ''}`;
+    }
+    const start = (this.currentPage - 1) * this.pageSize + 1;
+    const end = Math.min(this.currentPage * this.pageSize, this.totalItems);
+    return `Showing ${start} to ${end} of ${this.totalItems} transactions`;
+  }
+
+  // Single filter source of truth
   filters = { type: '', accountId: '', fromDate: '', toDate: '' };
   showFilters = false;
 
+  // Search
+  searchTerm = '';
+  private searchSubject = new Subject<string>();
+
   // Reactive form for sort only
   filterForm: FormGroup;
+
+  typeOptions = [
+    { label: 'All Types', value: '' },
+    { label: 'Expense', value: 'EXPENSE' },
+    { label: 'Income', value: 'INCOME' },
+    { label: 'Money Given', value: 'MONEY_GIVEN' },
+    { label: 'Money Taken', value: 'MONEY_TAKEN' }
+  ];
+
   sortOptions = [
-    { value: 'DATE_DESC',   label: 'Newest First' },
-    { value: 'DATE_ASC',    label: 'Oldest First' },
-    { value: 'AMOUNT_DESC', label: 'Amount: High to Low' },
-    { value: 'AMOUNT_ASC',  label: 'Amount: Low to High' }
+    { label: 'Newest First', value: 'DATE_DESC' },
+    { label: 'Oldest First', value: 'DATE_ASC' },
+    { label: 'Amount: High to Low', value: 'AMOUNT_DESC' },
+    { label: 'Amount: Low to High', value: 'AMOUNT_ASC' }
   ];
 
   editingId: number | null = null;
   editData:  any           = {};
+  accountOptions: { label: string; value: any }[] = [];
 
-  // Inline delete confirm
-  confirmDeleteTxId: number | null = null;
+  get filteredTransactions(): Transaction[] {
+    if (!this.searchTerm.trim()) {
+      return this.transactions;
+    }
+    const term = this.searchTerm.toLowerCase().trim();
+    return this.transactions.filter(tx => 
+      (tx.description && tx.description.toLowerCase().includes(term)) ||
+      (tx.category && tx.category.name.toLowerCase().includes(term)) ||
+      (tx.account && tx.account.name.toLowerCase().includes(term))
+    );
+  }
 
   constructor(
     private transactionService: TransactionService,
@@ -80,12 +112,29 @@ export class TransactionListComponent implements OnInit, OnDestroy {
     this.filterForm.get('sortOption')!.valueChanges
       .pipe(takeUntil(this.destroy$))
       .subscribe(() => { this.pageIndex = 0; this.loadTransactions(); });
+
+    this.searchSubject.pipe(
+      debounceTime(250),
+      distinctUntilChanged(),
+      takeUntil(this.destroy$)
+    ).subscribe(term => {
+      this.searchTerm = term;
+    });
   }
 
-  ngOnDestroy(): void { this.destroy$.next(); this.destroy$.complete(); }
+  ngOnDestroy(): void {
+    this.destroy$.next();
+    this.destroy$.complete();
+  }
 
   loadDropdownData(): void {
-    this.accountService.getAll().pipe(takeUntil(this.destroy$)).subscribe(a => this.accounts = a);
+    this.accountService.getAll().pipe(takeUntil(this.destroy$)).subscribe(a => {
+      this.accounts = a;
+      this.accountOptions = [
+        { label: 'All Accounts', value: '' },
+        ...a.map(acc => ({ label: acc.name, value: acc.id }))
+      ];
+    });
     this.categoryService.getAll().pipe(takeUntil(this.destroy$)).subscribe(c => this.categories = c);
     this.personService.getAll().pipe(takeUntil(this.destroy$)).subscribe(p => this.people = p);
   }
@@ -108,13 +157,23 @@ export class TransactionListComponent implements OnInit, OnDestroy {
     this.transactionService.getPaged(params)
       .pipe(takeUntil(this.destroy$))
       .subscribe({
-        next:  (res: any) => { this.transactions = res.content || []; this.totalItems = res.totalElements || 0; this.loading = false; },
+        next:  (res: any) => { 
+          this.transactions = res.content || []; 
+          this.totalItems = res.totalElements || 0; 
+          this.loading = false; 
+        },
         error: ()         => { this.loading = false; }
       });
   }
 
-  applyFilters(): void { this.pageIndex = 0; this.loadTransactions(); }
-  toggleFilters(): void { this.showFilters = !this.showFilters; }
+  applyFilters(): void { 
+    this.pageIndex = 0; 
+    this.loadTransactions(); 
+  }
+  
+  toggleFilters(): void { 
+    this.showFilters = !this.showFilters; 
+  }
 
   clearFilters(): void {
     this.filters = { type: '', accountId: '', fromDate: '', toDate: '' };
@@ -123,13 +182,20 @@ export class TransactionListComponent implements OnInit, OnDestroy {
     this.loadTransactions();
   }
 
+  onSearchChange(term: string): void {
+    this.searchSubject.next(term);
+  }
+
+  trackByTransaction(_: number, tx: Transaction): number {
+    return tx.id!;
+  }
+
   goToPage(page: number): void {
     if (page < 1 || page > this.totalPages) return;
     this.pageIndex = page - 1;
     this.loadTransactions();
   }
 
-  // Template uses *ngFor="let page of getPageNumbers()"
   getPageNumbers(): number[] {
     const pages: number[] = [];
     const start = Math.max(1, this.currentPage - 2);
@@ -138,21 +204,37 @@ export class TransactionListComponent implements OnInit, OnDestroy {
     return pages;
   }
 
-  editTransaction(id: number): void { this.router.navigate(['/transactions', id, 'edit']); }
-
-  requestDeleteTx(id: number): void {
-    this.confirmDeleteTxId = id;
+  editTransaction(id: number): void { 
+    this.router.navigate(['/transactions', id, 'edit']); 
   }
 
-  cancelDeleteTx(): void {
-    this.confirmDeleteTxId = null;
+  navigateToAddTransaction(): void {
+    this.router.navigate(['/transactions/new']);
   }
 
   deleteTransaction(id: number): void {
-    this.confirmDeleteTxId = null;
-    this.transactionService.delete(id).pipe(takeUntil(this.destroy$)).subscribe({
-      next:  () => this.loadTransactions(),
-      error: () => this.snackBar.open('Failed to delete transaction', 'Close', { duration: 3000 })
+    const dialogRef = this.dialog.open(ConfirmationDialogComponent, {
+      width: '400px',
+      data: {
+        title: 'Delete Transaction?',
+        message: 'Are you sure you want to permanently delete this transaction? This action cannot be undone.',
+        confirmLabel: 'Delete',
+        isDanger: true
+      }
+    });
+
+    dialogRef.afterClosed().pipe(takeUntil(this.destroy$)).subscribe(confirmed => {
+      if (confirmed) {
+        this.transactionService.delete(id).pipe(takeUntil(this.destroy$)).subscribe({
+          next: () => {
+            this.snackBar.open('Transaction deleted successfully', 'Close', { duration: 3000 });
+            this.loadTransactions();
+          },
+          error: () => {
+            this.snackBar.open('Failed to delete transaction', 'Close', { duration: 3000 });
+          }
+        });
+      }
     });
   }
 
@@ -173,7 +255,10 @@ export class TransactionListComponent implements OnInit, OnDestroy {
   }
 
   @HostListener('document:keydown.escape')
-  onEsc(): void { this.editingId = null; this.editData = {}; }
+  onEsc(): void { 
+    this.editingId = null; 
+    this.editData = {}; 
+  }
 
   getAccountName(tx: any): string  { return tx?.account?.name  ?? '—'; }
   getCategoryName(tx: any): string { return tx?.category?.name ?? '—'; }
@@ -181,14 +266,20 @@ export class TransactionListComponent implements OnInit, OnDestroy {
   formatType(type: string): string {
     switch (type) {
       case 'EXPENSE':     return 'Expense';
+      case 'INCOME':      return 'Income';
       case 'MONEY_GIVEN': return 'Money Given';
       case 'MONEY_TAKEN': return 'Money Taken';
       default:            return type;
     }
   }
 
-  isNegativeTransaction(type: string): boolean { return type === 'EXPENSE' || type === 'MONEY_GIVEN'; }
-  isPositiveTransaction(type: string): boolean { return type === 'MONEY_TAKEN'; }
+  isNegativeTransaction(type: string): boolean { 
+    return type === 'EXPENSE' || type === 'MONEY_GIVEN'; 
+  }
+  
+  isPositiveTransaction(type: string): boolean { 
+    return type === 'MONEY_TAKEN' || type === 'INCOME'; 
+  }
 
   formatAmount(tx: any): string {
     const abs = Math.abs(tx.amount ?? 0);

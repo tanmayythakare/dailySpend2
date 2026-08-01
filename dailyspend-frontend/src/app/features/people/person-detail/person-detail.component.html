@@ -1,11 +1,10 @@
 <div class="person-detail">
 
-  <!-- Back button -->
+  <!-- Back link -->
   <div class="person-detail__header">
-    <button class="person-detail__back-btn" onclick="history.back()">
-      ← Back
+    <button class="person-detail__back-btn" routerLink="/people">
+      <span class="material-icons">arrow_back</span> Back to Contacts
     </button>
-    <h1 class="page-title" *ngIf="person">{{ person.name }}</h1>
   </div>
 
   <!-- Loading -->
@@ -15,17 +14,23 @@
 
   <!-- Summary card -->
   <div class="person-detail__summary-card" *ngIf="person">
-    <div class="person-detail__avatar-lg">
-      {{ person.name ? person.name[0].toUpperCase() : '?' }}
+    <div class="person-detail__profile-info">
+      <div class="person-detail__avatar-lg">
+        {{ person.name ? person.name[0].toUpperCase() : '?' }}
+      </div>
+      <div>
+        <h2 class="person-detail__person-name">{{ person.name | titlecase }}</h2>
+        <span class="person-detail__person-subtitle">Contact Ledger</span>
+      </div>
     </div>
-    <div class="person-detail__summary-info">
-      <div class="person-detail__person-name">{{ person.name }}</div>
-      <div class="person-detail__balance-summary">Net balance</div>
+    
+    <div class="person-detail__balance-box">
+      <span class="person-detail__balance-label">Net Balance</span>
       <div class="person-detail__balance-amount-lg"
         [class.person-detail__balance-amount-lg--positive]="getBalance() > 0"
         [class.person-detail__balance-amount-lg--negative]="getBalance() < 0"
         [class.person-detail__balance-amount-lg--zero]="getBalance() === 0">
-        {{ formatCurrency(getBalance()) }}
+        {{ getBalance() > 0 ? '+' : '' }}{{ formatCurrency(getBalance()) }}
       </div>
     </div>
   </div>
@@ -40,7 +45,7 @@
 
     <!-- Empty -->
     <div class="empty-state" style="padding:32px" *ngIf="!loading && transactions.length === 0">
-      <div class="empty-icon">📋</div>
+      <div class="empty-icon"><span class="material-icons">receipt_long</span></div>
       <p>No transactions with this person yet</p>
     </div>
 
@@ -51,21 +56,25 @@
           <th>Date</th>
           <th>Type</th>
           <th>Description</th>
-          <th>Amount</th>
+          <th class="text-right">Amount</th>
         </tr>
       </thead>
       <tbody>
         <tr *ngFor="let tx of transactions">
           <td>{{ tx.transactionDate | date:'dd MMM yyyy' }}</td>
           <td>
-            <span *ngIf="tx.type === 'MONEY_GIVEN'">Money Given</span>
-            <span *ngIf="tx.type === 'MONEY_TAKEN'">Money Taken</span>
-            <span *ngIf="tx.type === 'EXPENSE'">Expense</span>
+            <span class="type-badge"
+                  [class.expense]="tx.type === 'EXPENSE'"
+                  [class.money-given]="tx.type === 'MONEY_GIVEN'"
+                  [class.money-taken]="tx.type === 'MONEY_TAKEN'">
+              {{ tx.type === 'MONEY_GIVEN' ? 'Money Given' : (tx.type === 'MONEY_TAKEN' ? 'Money Taken' : 'Expense') }}
+            </span>
           </td>
           <td>{{ tx.description || '—' }}</td>
-          <td [class.positive]="tx.type === 'MONEY_TAKEN'"
-              [class.negative]="tx.type === 'MONEY_GIVEN'">
-            {{ formatCurrency(tx.amount) }}
+          <td class="text-right amount-cell"
+              [class.positive]="tx.type === 'MONEY_GIVEN'"
+              [class.negative]="tx.type === 'MONEY_TAKEN'">
+            {{ tx.type === 'MONEY_GIVEN' ? '+' : '-' }}₹{{ tx.amount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }}
           </td>
         </tr>
       </tbody>

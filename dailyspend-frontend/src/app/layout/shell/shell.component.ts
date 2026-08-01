@@ -2,6 +2,7 @@ import { Component, OnInit, HostListener } from '@angular/core';
 import { RouterOutlet, Router, RouterLink, RouterLinkActive, NavigationEnd } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { AuthService } from '../../core/services/auth.service';
+import { ThemeService } from '../../core/services/theme.service';
 import { filter } from 'rxjs';
 
 @Component({
@@ -16,6 +17,8 @@ export class ShellComponent implements OnInit {
   isCollapsed  = false;
   isMobileOpen = false;
   pageTitle    = 'Dashboard';
+  username     = '';
+  activeTheme  = 'system';
 
   private routeTitles: { [key: string]: string } = {
     '/dashboard':        'Dashboard',
@@ -23,12 +26,21 @@ export class ShellComponent implements OnInit {
     '/transactions/new': 'New Transaction',
     '/people':           'People',
     '/reports':          'Reports',
-    '/accounts':         'Accounts'
+    '/accounts':         'Accounts',
+    '/split':            'Split Bill',
+    '/schedules':        'Recurring Schedules',
+    '/settings':         'Settings'
   };
 
-  constructor(private authService: AuthService, private router: Router) {}
+  constructor(
+    private authService: AuthService,
+    private router: Router,
+    private themeService: ThemeService
+  ) {}
 
   ngOnInit(): void {
+    this.getUsername();
+    this.themeService.activeTheme$.subscribe(theme => this.activeTheme = theme);
     this.router.events
       .pipe(filter(event => event instanceof NavigationEnd))
       .subscribe((event: any) => {
@@ -37,6 +49,18 @@ export class ShellComponent implements OnInit {
       });
     this.updatePageTitle(this.router.url);
     this.checkScreenSize();
+  }
+
+  private getUsername(): void {
+    const token = this.authService.getToken();
+    if (token) {
+      try {
+        const payload = JSON.parse(atob(token.split('.')[1]));
+        this.username = payload.sub || payload.username || '';
+      } catch {
+        this.username = '';
+      }
+    }
   }
 
   @HostListener('window:resize', ['$event'])
@@ -62,6 +86,10 @@ export class ShellComponent implements OnInit {
   }
 
   closeMobileSidebar(): void { this.isMobileOpen = false; }
+
+  toggleTheme(): void {
+    this.themeService.toggleLightDark();
+  }
 
   // authService.logout() already navigates to /login — don't call router.navigate again
   logout(): void { this.authService.logout(); }

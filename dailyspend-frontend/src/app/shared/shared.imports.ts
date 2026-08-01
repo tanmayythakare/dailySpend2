@@ -12,6 +12,17 @@ import { MatSelectModule } from '@angular/material/select';
 import { MatDialogModule } from '@angular/material/dialog';
 import { MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { MatMenuModule } from '@angular/material/menu';
+import { MatDatepickerModule } from '@angular/material/datepicker';
+import { MatNativeDateModule } from '@angular/material/core';
+
+import { AppCardComponent } from './components/card/card.component';
+import { AppButtonComponent } from './components/button/button.component';
+import { AppInputComponent } from './components/input/input.component';
+import { AppSelectComponent } from './components/select/select.component';
+import { LoadingSkeletonComponent } from './components/skeleton/skeleton.component';
+import { EmptyStateComponent } from './components/empty-state/empty-state.component';
+import { PageHeaderComponent } from './components/page-header/page-header.component';
 
 export const SHARED_IMPORTS = [
   CommonModule,
@@ -28,5 +39,16 @@ export const SHARED_IMPORTS = [
   MatSelectModule,
   MatDialogModule,
   MatSnackBarModule,
-  MatProgressSpinnerModule
+  MatProgressSpinnerModule,
+  MatMenuModule,
+  MatDatepickerModule,
+  MatNativeDateModule,
+
+  AppCardComponent,
+  AppButtonComponent,
+  AppInputComponent,
+  AppSelectComponent,
+  LoadingSkeletonComponent,
+  EmptyStateComponent,
+  PageHeaderComponent
 ] as const;

@@ -16,6 +16,12 @@ public class User {
     @Column(nullable = false)
     private String password;
 
+    @Column
+    private String upiId;
+
+    @Column
+    private String upiDisplayName;
+
     // ===== Getters & Setters =====
 
     public Long getId() {
@@ -40,5 +46,21 @@ public class User {
     
     public void setPassword(String password) {
         this.password = password;
+    }
+
+    public String getUpiId() {
+        return upiId;
+    }
+
+    public void setUpiId(String upiId) {
+        this.upiId = upiId;
+    }
+
+    public String getUpiDisplayName() {
+        return upiDisplayName;
+    }
+
+    public void setUpiDisplayName(String upiDisplayName) {
+        this.upiDisplayName = upiDisplayName;
     }
 }

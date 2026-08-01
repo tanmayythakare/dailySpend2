@@ -2,6 +2,7 @@ package com.example.dailyspend.controller;
 
 import com.example.dailyspend.dto.*;
 import com.example.dailyspend.service.ReportService;
+import com.example.dailyspend.util.SecurityUtils;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -14,9 +15,11 @@ import java.util.List;
 public class ReportController {
 
     private final ReportService reportService;
+    private final SecurityUtils securityUtils;
 
-    public ReportController(ReportService reportService) {
+    public ReportController(ReportService reportService, SecurityUtils securityUtils) {
         this.reportService = reportService;
+        this.securityUtils = securityUtils;
     }
 
     // ========== MONTHLY SUMMARY ==========
@@ -31,7 +34,8 @@ public class ReportController {
             @RequestParam int year,
             @RequestParam int month) {
         
-        MonthlySummaryDto summary = reportService.getMonthlySummary(year, month);
+        Long userId = securityUtils.getCurrentUserId();
+        MonthlySummaryDto summary = reportService.getMonthlySummary(year, month, userId);
         return ResponseEntity.ok(summary);
     }
 
@@ -47,7 +51,8 @@ public class ReportController {
             @RequestParam int year,
             @RequestParam int month) {
         
-        List<CategorySummaryDto> categories = reportService.getCategorySummary(year, month);
+        Long userId = securityUtils.getCurrentUserId();
+        List<CategorySummaryDto> categories = reportService.getCategorySummary(year, month, userId);
         return ResponseEntity.ok(categories);
     }
 
@@ -60,7 +65,8 @@ public class ReportController {
      */
     @GetMapping("/people")
     public ResponseEntity<List<PersonLedgerSummaryDto>> getPersonLedgerSummary() {
-        List<PersonLedgerSummaryDto> ledger = reportService.getPersonLedgerSummary();
+        Long userId = securityUtils.getCurrentUserId();
+        List<PersonLedgerSummaryDto> ledger = reportService.getPersonLedgerSummary(userId);
         return ResponseEntity.ok(ledger);
     }
 
@@ -73,7 +79,8 @@ public class ReportController {
     public ResponseEntity<PersonLedgerSummaryDto> getPersonLedgerSummary(
             @PathVariable Long personId) {
         
-        PersonLedgerSummaryDto ledger = reportService.getPersonLedgerSummary(personId);
+        Long userId = securityUtils.getCurrentUserId();
+        PersonLedgerSummaryDto ledger = reportService.getPersonLedgerSummary(personId, userId);
         return ResponseEntity.ok(ledger);
     }
 
@@ -89,7 +96,8 @@ public class ReportController {
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate) {
         
-        DateRangeSummaryDto summary = reportService.getDateRangeSummary(startDate, endDate);
+        Long userId = securityUtils.getCurrentUserId();
+        DateRangeSummaryDto summary = reportService.getDateRangeSummary(startDate, endDate, userId);
         return ResponseEntity.ok(summary);
     }
 }

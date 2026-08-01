@@ -7,12 +7,15 @@ import org.springframework.data.repository.query.Param;
 
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.Optional;
 
 public interface PersonRepository extends JpaRepository<Person, Long> {
 
     // ================= USER SCOPED =================
 
     List<Person> findByUserId(Long userId);
+
+    Optional<Person> findByIdAndUserId(Long id, Long userId);
 
     // ================= BUSINESS LOGIC =================
 
@@ -32,7 +35,8 @@ public interface PersonRepository extends JpaRepository<Person, Long> {
             ), 0)
         FROM Transaction t
         WHERE t.person.id = :personId
+          AND t.user.id = :userId
           AND t.deleted = false
     """)
-    BigDecimal calculatePersonBalance(@Param("personId") Long personId);
+    BigDecimal calculatePersonBalance(@Param("personId") Long personId, @Param("userId") Long userId);
 }

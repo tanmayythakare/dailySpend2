@@ -1,14 +1,13 @@
 import { Component, OnDestroy } from '@angular/core';
-import { CommonModule } from '@angular/common';
-import { FormsModule } from '@angular/forms';
-import { Router, RouterLink } from '@angular/router';
+import { Router } from '@angular/router';
 import { Subject, takeUntil } from 'rxjs';
 import { AuthService } from '../../../core/services/auth.service';
+import { SHARED_IMPORTS } from '../../../shared/shared.imports';
 
 @Component({
   selector: 'app-login',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink],
+  imports: [SHARED_IMPORTS],
   templateUrl: './login.component.html',
   styleUrls: ['./login.component.scss']
 })
@@ -23,6 +22,7 @@ export class LoginComponent implements OnDestroy {
 
   loading = false;
   errorMessage = '';
+  showPassword = false;
 
   constructor(
     private authService: AuthService,

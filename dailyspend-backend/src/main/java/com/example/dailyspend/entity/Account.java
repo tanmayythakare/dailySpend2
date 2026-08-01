@@ -28,6 +28,9 @@ public class Account {
     @Version
     private Long version;   // 🔒 Optimistic locking for balance safety
 
+    @Column(name = "is_deleted", nullable = false)
+    private boolean isDeleted = false;
+
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
@@ -66,6 +69,14 @@ public class Account {
 
     public Long getVersion() {
         return version;
+    }
+
+    public boolean isDeleted() {
+        return isDeleted;
+    }
+
+    public void setDeleted(boolean deleted) {
+        this.isDeleted = deleted;
     }
 
     public User getUser() {

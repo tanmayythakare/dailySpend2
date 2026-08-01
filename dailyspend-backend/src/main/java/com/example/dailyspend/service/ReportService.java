@@ -3,6 +3,7 @@ package com.example.dailyspend.service;
 import com.example.dailyspend.dto.*;
 import com.example.dailyspend.entity.Person;
 import com.example.dailyspend.entity.TransactionType;
+import com.example.dailyspend.exception.ResourceNotFoundException;
 import com.example.dailyspend.repository.PersonRepository;
 import com.example.dailyspend.repository.TransactionRepository;
 import org.springframework.stereotype.Service;
@@ -30,23 +31,28 @@ public class ReportService {
     /**
      * Get financial summary for a specific month
      */
-    public MonthlySummaryDto getMonthlySummary(int year, int month) {
+    public MonthlySummaryDto getMonthlySummary(int year, int month, Long userId) {
         BigDecimal totalExpenses = transactionRepository.sumByYearMonthAndType(
-                year, month, TransactionType.EXPENSE
+                year, month, TransactionType.EXPENSE, userId
         );
 
         BigDecimal totalMoneyGiven = transactionRepository.sumByYearMonthAndType(
-                year, month, TransactionType.MONEY_GIVEN
+                year, month, TransactionType.MONEY_GIVEN, userId
         );
 
         BigDecimal totalMoneyTaken = transactionRepository.sumByYearMonthAndType(
-                year, month, TransactionType.MONEY_TAKEN
+                year, month, TransactionType.MONEY_TAKEN, userId
         );
 
-        long transactionCount = transactionRepository.countByYearMonth(year, month);
+        BigDecimal totalIncome = transactionRepository.sumByYearMonthAndType(
+                year, month, TransactionType.INCOME, userId
+        );
 
-        // Net cash flow = money taken - (expenses + money given)
-        BigDecimal netCashFlow = totalMoneyTaken
+        long transactionCount = transactionRepository.countByYearMonth(year, month, userId);
+
+        // Net cash flow = income + money taken - (expenses + money given)
+        BigDecimal netCashFlow = totalIncome
+                .add(totalMoneyTaken)
                 .subtract(totalExpenses)
                 .subtract(totalMoneyGiven);
 
@@ -56,6 +62,7 @@ public class ReportService {
         summary.setTotalExpenses(totalExpenses);
         summary.setTotalMoneyGiven(totalMoneyGiven);
         summary.setTotalMoneyTaken(totalMoneyTaken);
+        summary.setTotalIncome(totalIncome);
         summary.setNetCashFlow(netCashFlow);
         summary.setTransactionCount(transactionCount);
 
@@ -67,9 +74,9 @@ public class ReportService {
     /**
      * Get expense breakdown by category for a specific month
      */
-    public List<CategorySummaryDto> getCategorySummary(int year, int month) {
+    public List<CategorySummaryDto> getCategorySummary(int year, int month, Long userId) {
         List<CategorySummaryDto> categories = transactionRepository
-                .getCategorySummaryByMonth(year, month);
+                .getCategorySummaryByMonth(year, month, userId);
 
         // Calculate percentages
         BigDecimal total = categories.stream()
@@ -94,16 +101,16 @@ public class ReportService {
     /**
      * Get summary of all people with their balances and transaction details
      */
-    public List<PersonLedgerSummaryDto> getPersonLedgerSummary() {
-        List<Person> people = personRepository.findAll();
+    public List<PersonLedgerSummaryDto> getPersonLedgerSummary(Long userId) {
+        List<Person> people = personRepository.findByUserId(userId);
 
         return people.stream()
                 .map(person -> {
-                    BigDecimal balance = personRepository.calculatePersonBalance(person.getId());
-                    BigDecimal totalGiven = transactionRepository.sumMoneyGivenToPerson(person.getId());
-                    BigDecimal totalTaken = transactionRepository.sumMoneyTakenFromPerson(person.getId());
-                    LocalDate lastTransactionDate = transactionRepository.getLastTransactionDateForPerson(person.getId());
-                    long transactionCount = transactionRepository.countByPersonId(person.getId());
+                    BigDecimal balance = personRepository.calculatePersonBalance(person.getId(), userId);
+                    BigDecimal totalGiven = transactionRepository.sumMoneyGivenToPerson(person.getId(), userId);
+                    BigDecimal totalTaken = transactionRepository.sumMoneyTakenFromPerson(person.getId(), userId);
+                    LocalDate lastTransactionDate = transactionRepository.getLastTransactionDateForPerson(person.getId(), userId);
+                    long transactionCount = transactionRepository.countByPersonId(person.getId(), userId);
 
                     return new PersonLedgerSummaryDto(
                             person.getId(),
@@ -122,15 +129,15 @@ public class ReportService {
     /**
      * Get ledger summary for a specific person
      */
-    public PersonLedgerSummaryDto getPersonLedgerSummary(Long personId) {
-        Person person = personRepository.findById(personId)
-                .orElseThrow(() -> new RuntimeException("Person not found"));
+    public PersonLedgerSummaryDto getPersonLedgerSummary(Long personId, Long userId) {
+        Person person = personRepository.findByIdAndUserId(personId, userId)
+                .orElseThrow(() -> new ResourceNotFoundException("Person not found"));
 
-        BigDecimal balance = personRepository.calculatePersonBalance(personId);
-        BigDecimal totalGiven = transactionRepository.sumMoneyGivenToPerson(personId);
-        BigDecimal totalTaken = transactionRepository.sumMoneyTakenFromPerson(personId);
-        LocalDate lastTransactionDate = transactionRepository.getLastTransactionDateForPerson(personId);
-        long transactionCount = transactionRepository.countByPersonId(personId);
+        BigDecimal balance = personRepository.calculatePersonBalance(personId, userId);
+        BigDecimal totalGiven = transactionRepository.sumMoneyGivenToPerson(personId, userId);
+        BigDecimal totalTaken = transactionRepository.sumMoneyTakenFromPerson(personId, userId);
+        LocalDate lastTransactionDate = transactionRepository.getLastTransactionDateForPerson(personId, userId);
+        long transactionCount = transactionRepository.countByPersonId(personId, userId);
 
         return new PersonLedgerSummaryDto(
                 person.getId(),
@@ -148,23 +155,28 @@ public class ReportService {
     /**
      * Get financial summary for a custom date range
      */
-    public DateRangeSummaryDto getDateRangeSummary(LocalDate startDate, LocalDate endDate) {
+    public DateRangeSummaryDto getDateRangeSummary(LocalDate startDate, LocalDate endDate, Long userId) {
         BigDecimal totalExpenses = transactionRepository.sumByDateRangeAndType(
-                startDate, endDate, TransactionType.EXPENSE
+                startDate, endDate, TransactionType.EXPENSE, userId
         );
 
         BigDecimal totalMoneyGiven = transactionRepository.sumByDateRangeAndType(
-                startDate, endDate, TransactionType.MONEY_GIVEN
+                startDate, endDate, TransactionType.MONEY_GIVEN, userId
         );
 
         BigDecimal totalMoneyTaken = transactionRepository.sumByDateRangeAndType(
-                startDate, endDate, TransactionType.MONEY_TAKEN
+                startDate, endDate, TransactionType.MONEY_TAKEN, userId
         );
 
-        long transactionCount = transactionRepository.countByDateRange(startDate, endDate);
+        BigDecimal totalIncome = transactionRepository.sumByDateRangeAndType(
+                startDate, endDate, TransactionType.INCOME, userId
+        );
 
-        // Net cash flow = money taken - (expenses + money given)
-        BigDecimal netCashFlow = totalMoneyTaken
+        long transactionCount = transactionRepository.countByDateRange(startDate, endDate, userId);
+
+        // Net cash flow = income + money taken - (expenses + money given)
+        BigDecimal netCashFlow = totalIncome
+                .add(totalMoneyTaken)
                 .subtract(totalExpenses)
                 .subtract(totalMoneyGiven);
 
@@ -174,6 +186,7 @@ public class ReportService {
                 totalExpenses,
                 totalMoneyGiven,
                 totalMoneyTaken,
+                totalIncome,
                 netCashFlow,
                 transactionCount
         );

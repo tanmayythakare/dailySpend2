@@ -1,45 +1,75 @@
 <div class="auth-page">
   <div class="auth-card">
 
-    <div class="auth-brand">
-      <div class="auth-brand-icon">₹</div>
-      <div class="auth-brand-name">DailySpend</div>
-    </div>
+    <div class="auth-form-container">
+      <div class="auth-brand">
+        <div class="logo-icon">₹</div>
+        <span>DailySpend</span>
+      </div>
 
-    <h1 class="auth-title">Welcome back</h1>
-    <p class="auth-subtitle">Sign in to continue</p>
+      <h1 class="auth-title">Welcome back!</h1>
+      <p class="auth-subtitle">Sign in to continue to DailySpend</p>
 
-    <div class="alert alert--error" *ngIf="errorMessage" role="alert">
-      {{ errorMessage }}
-    </div>
 
-    <form class="auth-form" (ngSubmit)="onSubmit()">
+      <div class="alert alert--error" *ngIf="errorMessage" role="alert">
+        {{ errorMessage }}
+      </div>
 
-      <div class="form-field">
-        <label for="username">Username</label>
-        <input type="text" id="username" name="username"
+      <form class="auth-form" (ngSubmit)="onSubmit()">
+
+        <app-input
+          id="username"
+          label="Email or Username"
+          placeholder="Enter your email or username"
           [(ngModel)]="credentials.username"
-          placeholder="Enter your username"
-          required autocomplete="username" />
+          name="username"
+          [required]="true"
+          autocomplete="username">
+        </app-input>
+
+        <div class="password-field-container" style="position: relative;">
+          <app-input
+            id="password"
+            label="Password"
+            [type]="showPassword ? 'text' : 'password'"
+            placeholder="Enter your password"
+            [(ngModel)]="credentials.password"
+            name="password"
+            [required]="true"
+            autocomplete="current-password">
+            <button 
+              type="button" 
+              class="password-toggle-btn"
+              (click)="showPassword = !showPassword"
+              style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%); background: none; border: none; cursor: pointer; color: var(--gray-400); z-index: 10; display: flex; align-items: center; justify-content: center; padding: 0;">
+              <span class="material-icons" style="font-size: 18px;">{{ showPassword ? 'visibility_off' : 'visibility' }}</span>
+            </button>
+          </app-input>
+        </div>
+
+        <div class="auth-helper-row">
+          <a href="#" (click)="$event.preventDefault()">Forgot password?</a>
+        </div>
+
+        <app-button
+          variant="primary"
+          type="submit"
+          [loading]="loading"
+          class="w-full">
+          Sign In
+        </app-button>
+
+      </form>
+
+      <div class="auth-trust-note">
+        <span class="material-icons">lock</span>
+        <span>Protected with industry-standard encryption</span>
       </div>
 
-      <div class="form-field">
-        <label for="password">Password</label>
-        <input type="password" id="password" name="password"
-          [(ngModel)]="credentials.password"
-          placeholder="Enter your password"
-          required autocomplete="current-password" />
+      <div class="auth-footer">
+        Don't have an account? <a routerLink="/register">Create one</a>
       </div>
-
-      <button class="btn btn--primary w-full" type="submit" [disabled]="loading">
-        {{ loading ? 'Signing in...' : 'Sign In' }}
-      </button>
-
-    </form>
-
-    <div class="auth-footer">
-      Don't have an account? <a routerLink="/register">Create one</a>
     </div>
 
   </div>
-</div>
+</div>

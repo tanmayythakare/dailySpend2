@@ -1,6 +1,6 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { ActivatedRoute } from '@angular/router';
+import { ActivatedRoute, RouterModule } from '@angular/router';
 import { Subject, takeUntil } from 'rxjs';
 import { PersonService } from '../../../core/services/person.service';
 import { Person } from '../../../models/person.model';
@@ -9,7 +9,7 @@ import { Transaction } from '../../../models/transaction.model';
 @Component({
   selector: 'app-person-detail',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, RouterModule],
   templateUrl: './person-detail.component.html',
   styleUrls: ['./person-detail.component.scss']
 })
@@ -61,19 +61,19 @@ export class PersonDetailComponent implements OnInit, OnDestroy {
       });
   }
 
-  // MONEY_TAKEN = they gave us money (positive), MONEY_GIVEN = we gave them (negative)
+  // MONEY_GIVEN = we gave them (increases what they owe us), MONEY_TAKEN = they gave us (decreases what they owe us)
   getBalance(): number {
     return this.transactions.reduce((sum, t) => {
-      if (t.type === 'MONEY_TAKEN') return sum + (t.amount || 0);
-      if (t.type === 'MONEY_GIVEN') return sum - (t.amount || 0);
+      if (t.type === 'MONEY_GIVEN') return sum + (t.amount || 0);
+      if (t.type === 'MONEY_TAKEN') return sum - (t.amount || 0);
       return sum;
     }, 0);
   }
 
   formatCurrency(value: number | undefined | null): string {
-    if (value == null) return '₹0.00';
+    if (value == null || value === 0) return '₹0.00';
     const abs = Math.abs(value);
     const fmt = abs.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-    return value < 0 ? `-₹${fmt}` : `₹${fmt}`;
+    return value < 0 ? `-₹${fmt}` : `+₹${fmt}`;
   }
 }

@@ -1,0 +1,429 @@
+<div class="split-container page-container">
+  <app-page-header title="Split a Bill">
+  </app-page-header>
+
+  <!-- Wizard Steps Navigation -->
+  <div class="wizard-steps">
+    <div class="step-indicator" [class.active]="currentStep === 1" [class.completed]="currentStep > 1" (click)="goToStep(1)">
+      <div class="step-number"><span class="material-icons" *ngIf="currentStep > 1">check</span><span *ngIf="currentStep <= 1">1</span></div>
+      <span class="step-label">Details</span>
+    </div>
+    <div class="step-connector" [class.completed]="currentStep > 1"></div>
+
+    <div class="step-indicator" [class.active]="currentStep === 2" [class.completed]="currentStep > 2" [class.disabled]="!canGoToStep(2)" (click)="goToStep(2)">
+      <div class="step-number"><span class="material-icons" *ngIf="currentStep > 2">check</span><span *ngIf="currentStep <= 2">2</span></div>
+      <span class="step-label">Participants</span>
+    </div>
+    <div class="step-connector" [class.completed]="currentStep > 2"></div>
+
+    <div class="step-indicator" [class.active]="currentStep === 3" [class.completed]="currentStep > 3" [class.disabled]="!canGoToStep(3)" (click)="goToStep(3)">
+      <div class="step-number"><span class="material-icons" *ngIf="currentStep > 3">check</span><span *ngIf="currentStep <= 3">3</span></div>
+      <span class="step-label">Split Method</span>
+    </div>
+    <div class="step-connector" [class.completed]="currentStep > 3"></div>
+
+    <div class="step-indicator" [class.active]="currentStep === 4" [class.disabled]="!canGoToStep(4)" (click)="goToStep(4)">
+      <div class="step-number">4</div>
+      <span class="step-label">Confirm</span>
+    </div>
+  </div>
+
+  <div class="wizard-content-card">
+    <!-- STEP 1: BILL DETAILS -->
+    <div *ngIf="currentStep === 1" class="step-content">
+      <div class="step-header">
+        <h3>Step 1: Expense Details</h3>
+        <p>Enter the details of the expense you'll split with others.</p>
+      </div>
+
+      <span class="required-legend">* Required fields</span>
+
+      <div class="split-details-card mb-4">
+        <form [formGroup]="billForm" class="split-form">
+          <div class="form-row">
+            <app-input
+              id="description"
+              label="Description *"
+              placeholder="e.g. Groceries, dinner settlement"
+              formControlName="description"
+              [required]="true">
+            </app-input>
+
+            <app-input
+              id="amount"
+              label="Total Amount *"
+              type="number"
+              placeholder="0.00"
+              prefix="₹"
+              formControlName="amount"
+              [required]="true">
+            </app-input>
+          </div>
+
+          <div class="form-row">
+            <app-select
+              id="accountId"
+              label="Paid From (Account) *"
+              placeholder="Select payment source"
+              [options]="accountOptions"
+              formControlName="accountId"
+              [required]="true">
+            </app-select>
+
+            <app-select
+              id="categoryId"
+              label="Category (Optional)"
+              placeholder="Select a category"
+              [options]="categoryOptions"
+              formControlName="categoryId"
+              [allowEmpty]="true"
+              emptyLabel="Select a category">
+            </app-select>
+          </div>
+
+          <div class="form-row">
+            <app-input
+              id="transactionDate"
+              label="Date *"
+              type="date"
+              formControlName="transactionDate"
+              [required]="true">
+            </app-input>
+          </div>
+        </form>
+      </div>
+
+      <!-- Required Fields Actionable Callout (UX5 Alignment) -->
+      <div class="info-callout info-callout--info mb-4" *ngIf="billForm.invalid && (billForm.get('description')?.touched || billForm.get('amount')?.touched || billForm.get('accountId')?.touched || billForm.get('transactionDate')?.touched)">
+        <span class="material-icons info-callout-icon">info</span>
+        <div class="info-callout-content">
+          Please fill required fields to enable continuing:
+          <strong *ngIf="billForm.get('description')?.invalid">Description</strong>
+          <strong *ngIf="billForm.get('amount')?.invalid">Amount</strong>
+          <strong *ngIf="billForm.get('accountId')?.invalid">Account</strong>
+          <strong *ngIf="billForm.get('transactionDate')?.invalid">Date</strong>
+        </div>
+      </div>
+    </div>
+
+    <!-- STEP 2: PARTICIPANTS -->
+    <div *ngIf="currentStep === 2" class="step-content">
+      <div class="step-header">
+        <h3>Step 2: Choose Participants</h3>
+        <p>Select who is sharing this bill with you.</p>
+      </div>
+
+      <div class="myself-switch">
+        <label class="switch-container">
+          <input type="checkbox" [(ngModel)]="includeMyself" (change)="initShares()"/>
+          <span class="switch-slider"></span>
+        </label>
+        <div class="switch-labels">
+          <span class="title">Include myself in split</span>
+          <span class="desc">Keep this enabled if you are also paying for your own share of the bill.</span>
+        </div>
+      </div>
+
+      <div class="participants-list-wrapper">
+        <label class="section-label">Select People ({{ selectedPeople.length }} selected)</label>
+        
+        <div *ngIf="participants.length === 0" class="no-people-alert">
+          <span class="material-icons">people_outline</span>
+          <p>No people found. Please add people first in the People view.</p>
+        </div>
+
+        <div class="participants-grid" *ngIf="participants.length > 0">
+          <div 
+            *ngFor="let item of participants" 
+            class="participant-card" 
+            [class.selected]="item.selected"
+            (click)="toggleParticipant(item)"
+          >
+            <div class="checkbox-indicator">
+              <span class="material-icons" *ngIf="item.selected">check_circle</span>
+              <span class="material-icons" *ngIf="!item.selected">radio_button_unchecked</span>
+            </div>
+            <div class="avatar">{{ item.person.name[0].toUpperCase() }}</div>
+            <span class="name">{{ item.person.name | titlecase }}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- STEP 3: SPLIT MODES -->
+    <div *ngIf="currentStep === 3" class="step-content">
+      <div class="step-header">
+        <h3>Step 3: Split Modes & Allocation</h3>
+        <p>Choose how to allocate shares of the ₹{{ totalBillAmount | number:'1.2-2' }} bill.</p>
+      </div>
+
+      <div class="split-mode-tabs">
+        <button 
+          type="button" 
+          class="tab-btn" 
+          [class.active]="splitMode === 'equal'"
+          (click)="setSplitMode('equal')"
+        >
+          <span class="material-icons">balance</span>
+          <span>Split Equally</span>
+        </button>
+        <button 
+          type="button" 
+          class="tab-btn" 
+          [class.active]="splitMode === 'percentage'"
+          (click)="setSplitMode('percentage')"
+        >
+          <span class="material-icons">percent</span>
+          <span>By Percentage</span>
+        </button>
+        <button 
+          type="button" 
+          class="tab-btn" 
+          [class.active]="splitMode === 'custom'"
+          (click)="setSplitMode('custom')"
+        >
+          <span class="material-icons">calculate</span>
+          <span>Custom Amounts</span>
+        </button>
+      </div>
+
+      <!-- EQUAL ALLOCATION -->
+      <div *ngIf="splitMode === 'equal'" class="mode-body">
+        <div class="info-callout info-callout--info mb-4">
+          <span class="material-icons info-callout-icon">info</span>
+          <div class="info-callout-content">
+            Total ₹{{ totalBillAmount | number:'1.2-2' }} split equally among {{ activeParticipantsCount }} people.
+          </div>
+        </div>
+
+        <div class="shares-list">
+          <div class="share-row" *ngFor="let share of calculatedShares">
+            <div class="share-profile">
+              <div class="avatar-small">{{ share.name[0].toUpperCase() }}</div>
+              <span class="name">{{ share.name }}</span>
+            </div>
+            <div class="share-value text-semibold">
+              ₹{{ share.amount | number:'1.2-2' }}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- PERCENTAGE ALLOCATION -->
+      <div *ngIf="splitMode === 'percentage'" class="mode-body">
+        <div class="shares-input-grid">
+          <div class="share-input-row" *ngFor="let share of calculatedShares">
+            <div class="share-profile">
+              <div class="avatar-small">{{ share.name[0].toUpperCase() }}</div>
+              <span class="name">{{ share.name }}</span>
+            </div>
+            
+            <div class="input-wrapper percentage-wrapper">
+              <input 
+                type="number" 
+                [ngModel]="shares[share.id]" 
+                (ngModelChange)="onPercentageChange(share.id, $event)"
+                placeholder="0"
+                min="0"
+                max="100"
+                class="form-control-small"
+              />
+              <span class="unit">%</span>
+            </div>
+
+            <div class="share-preview-val">
+              ₹{{ share.amount | number:'1.2-2' }}
+            </div>
+          </div>
+        </div>
+
+        <!-- Progress Validation Bar -->
+        <div class="validation-progress-bar-container">
+          <div class="progress-info">
+            <span class="label">Total Percentages</span>
+            <span class="value" [class.valid]="isSplitValid()" [class.invalid]="!isSplitValid()">
+              {{ splitSum }}% / 100%
+            </span>
+          </div>
+          <div class="bar-bg">
+            <div 
+              class="bar-fill" 
+              [class.valid]="isSplitValid()" 
+              [class.over]="splitSum > 100"
+              [style.width.%]="splitSum > 100 ? 100 : splitSum"
+            ></div>
+          </div>
+          <div class="validation-msg" *ngIf="!isSplitValid()">
+            <span class="material-icons">error_outline</span>
+            <span *ngIf="unassignedRemainder > 0">Unassigned percentage: {{ unassignedRemainder }}% remaining.</span>
+            <span *ngIf="unassignedRemainder < 0">Overallocated: Exceeds 100% by {{ -unassignedRemainder }}%.</span>
+          </div>
+          <div class="validation-msg success" *ngIf="isSplitValid()">
+            <span class="material-icons">check_circle</span>
+            <span>Split matches exactly 100%! Ready to proceed.</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- CUSTOM ALLOCATION -->
+      <div *ngIf="splitMode === 'custom'" class="mode-body">
+        <div class="shares-input-grid">
+          <div class="share-input-row" *ngFor="let share of calculatedShares">
+            <div class="share-profile">
+              <div class="avatar-small">{{ share.name[0].toUpperCase() }}</div>
+              <span class="name">{{ share.name }}</span>
+            </div>
+
+            <div class="input-wrapper custom-amount-wrapper">
+              <span class="unit">₹</span>
+              <input 
+                type="number" 
+                [(ngModel)]="shares[share.id]" 
+                (ngModelChange)="recalculateShares()"
+                placeholder="0.00"
+                min="0"
+                class="form-control-small"
+              />
+            </div>
+          </div>
+        </div>
+
+        <!-- Progress Validation Bar -->
+        <div class="validation-progress-bar-container">
+          <div class="progress-info">
+            <span class="label">Total Allocated</span>
+            <span class="value" [class.valid]="isSplitValid()" [class.invalid]="!isSplitValid()">
+              ₹{{ splitSum | number:'1.2-2' }} / ₹{{ totalBillAmount | number:'1.2-2' }}
+            </span>
+          </div>
+          <div class="bar-bg">
+            <div 
+              class="bar-fill" 
+              [class.valid]="isSplitValid()" 
+              [class.over]="splitSum > totalBillAmount"
+              [style.width.%]="(splitSum / totalBillAmount) * 100 > 100 ? 100 : (splitSum / totalBillAmount) * 100"
+            ></div>
+          </div>
+          <div class="validation-msg" *ngIf="!isSplitValid()">
+            <span class="material-icons">error_outline</span>
+            <span *ngIf="unassignedRemainder > 0">Unallocated remainder: ₹{{ unassignedRemainder | number:'1.2-2' }} remaining.</span>
+            <span *ngIf="unassignedRemainder < 0">Overallocated: Exceeds bill amount by ₹{{ -unassignedRemainder | number:'1.2-2' }}.</span>
+          </div>
+          <div class="validation-msg success" *ngIf="isSplitValid()">
+            <span class="material-icons">check_circle</span>
+            <span>Split matches the total bill amount perfectly! Ready to proceed.</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- STEP 4: LEDGER PREVIEW -->
+    <div *ngIf="currentStep === 4" class="step-content">
+      <div class="step-header">
+        <h3>Step 4: Review Ledger Entries</h3>
+        <p>Review the transactions that will be created from this split.</p>
+      </div>
+
+      <div class="preview-meta-card">
+        <div class="meta-item">
+          <span class="label">Total Expense</span>
+          <span class="value text-semibold">₹{{ totalBillAmount | number:'1.2-2' }}</span>
+        </div>
+        <div class="meta-item">
+          <span class="label">Paid From</span>
+          <span class="value text-semibold">{{ selectedAccountName }}</span>
+        </div>
+        <div class="meta-item">
+          <span class="label">Description</span>
+          <span class="value text-semibold">{{ billForm.value.description }}</span>
+        </div>
+        <div class="meta-item">
+          <span class="label">Date</span>
+          <span class="value text-semibold">{{ billForm.value.transactionDate | date:'dd MMM yyyy' }}</span>
+        </div>
+      </div>
+
+      <div class="preview-transactions">
+        <label class="section-label">Ledger Entries to Create</label>
+
+        <div class="preview-list">
+          <div class="preview-row" *ngFor="let share of calculatedShares">
+            <!-- Case 1: Me (Expense) -->
+            <ng-container *ngIf="share.id === 'me'">
+              <div class="preview-details">
+                <span class="material-icons type-icon expense-icon">shopping_bag</span>
+                <div class="info">
+                  <span class="title">Personal Expense (You)</span>
+                  <span class="desc">Records your share as local account expense.</span>
+                </div>
+              </div>
+              <div class="preview-amount negative">
+                -₹{{ share.amount | number:'1.2-2' }}
+              </div>
+            </ng-container>
+
+            <!-- Case 2: Others (Lent / Money Given) -->
+            <ng-container *ngIf="share.id !== 'me'">
+              <div class="preview-details">
+                <span class="material-icons type-icon given-icon">arrow_downward</span>
+                <div class="info">
+                  <span class="title">Lent to {{ share.name | titlecase }}</span>
+                  <span class="desc">Records ledger entry. They owe you this amount.</span>
+                </div>
+              </div>
+              <div class="preview-amount positive">
+                +₹{{ share.amount | number:'1.2-2' }}
+              </div>
+            </ng-container>
+          </div>
+        </div>
+      </div>
+
+      <div class="info-callout info-callout--info mb-4">
+        <span class="material-icons info-callout-icon">verified_user</span>
+        <div class="info-callout-content">
+          <strong>Safe saving:</strong> All split entries are updated together. If any single entry fails to save, none of them will be saved, keeping your ledger perfectly balanced.
+        </div>
+      </div>
+    </div>
+
+    <!-- WIZARD FOOTER NAVIGATION -->
+    <div class="wizard-footer">
+      <app-button 
+        variant="outline" 
+        *ngIf="currentStep > 1" 
+        (click)="prevStep()"
+      >
+        <span class="material-icons" style="font-size: 16px; margin-right: 6px; vertical-align: middle;">arrow_back</span>
+        Back
+      </app-button>
+
+      <div class="spacer"></div>
+
+      <div class="next-step-container" *ngIf="currentStep < 4" style="align-items: flex-end;">
+        <app-button 
+          variant="primary"
+          [disabled]="!canGoToStep(currentStep + 1)"
+          (click)="nextStep()"
+        >
+          {{ getNextButtonLabel() }}
+          <span class="material-icons" style="font-size: 16px; margin-left: 6px; vertical-align: middle;">arrow_forward</span>
+        </app-button>
+        <span class="step-hint" *ngIf="!canGoToStep(currentStep + 1)">
+          Complete all required fields to continue.
+        </span>
+      </div>
+
+      <app-button 
+        variant="primary"
+        *ngIf="currentStep === 4" 
+        [disabled]="!isSplitValid() || submitting"
+        [loading]="submitting"
+        (click)="confirmAndSplit()"
+      >
+        <span class="material-icons" *ngIf="!submitting" style="font-size: 16px; margin-right: 6px; vertical-align: middle;">done_all</span>
+        {{ submitting ? 'Processing split...' : 'Confirm & Split Bill' }}
+      </app-button>
+    </div>
+  </div>
+</div>

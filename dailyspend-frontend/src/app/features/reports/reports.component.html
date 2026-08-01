@@ -1,87 +1,238 @@
-<div class="reports-container">
+<div class="reports-container page-container">
 
   <!-- Header -->
-  <div class="reports-header">
-    <h1 class="page-title">Reports</h1>
+  <app-page-header 
+    title="Financial Reports"
+    subtitle="Understand your income, expenses, savings, and spending patterns at a glance.">
+  </app-page-header>
+
+  <!-- Loading State Skeletons -->
+  <div *ngIf="loading" class="reports-skeletons-wrapper">
+    <div class="stats-skeletons">
+      <app-skeleton type="card" [count]="4"></app-skeleton>
+    </div>
+    <div class="charts-skeletons mt-5">
+      <app-skeleton type="card" [count]="1"></app-skeleton>
+      <app-skeleton type="card" [count]="1"></app-skeleton>
+    </div>
   </div>
 
-  <!-- Summary Cards -->
-  <div class="summary-row">
+  <!-- Content Section -->
+  <ng-container *ngIf="!loading">
 
-    <!-- Income -->
-    <div class="stat-card">
-      <div class="stat-body">
-        <span class="stat-label">Total Income</span>
-        <span class="stat-value">
-          {{ formatCurrency(summary.totalIncome) }}
-        </span>
-      </div>
-    </div>
+    <!-- Empty State -->
+    <app-empty-state
+      *ngIf="summary.transactionCount === 0"
+      title="No financial data yet"
+      text="Log transactions inside your workspace ledgers to see active monthly spending charts and trend analyses."
+      icon="bar_chart"
+      actionText="Add Transaction"
+      (actionClicked)="navigateToNewTransaction()">
+    </app-empty-state>
 
-    <!-- Expenses -->
-    <div class="stat-card">
-      <div class="stat-body">
-        <span class="stat-label">Total Expenses</span>
-        <span class="stat-value">
-          {{ formatCurrency(summary.totalExpenses) }}
-        </span>
-      </div>
-    </div>
+    <div *ngIf="summary.transactionCount > 0" class="reports-content-layout">
+      
+      <!-- Summary Row (Stat Cards) -->
+      <div class="summary-cards-grid">
+        <!-- Income Stat Card -->
+        <app-card class="stat-card income-card">
+          <div class="stat-header">
+            <span class="stat-label">Total Income</span>
+            <span class="stat-icon positive"><span class="material-icons">trending_up</span></span>
+          </div>
+          <div class="stat-value text-positive">{{ formatCurrency(summary.totalIncome) }}</div>
+        </app-card>
 
-    <!-- Net Flow -->
-    <div class="stat-card">
-      <div class="stat-body">
-        <span class="stat-label">Net Flow</span>
-        <span class="stat-value"
-              [class.positive]="summary.netFlow >= 0"
-              [class.negative]="summary.netFlow < 0">
-          {{ formatCurrency(summary.netFlow) }}
-        </span>
-      </div>
-    </div>
+        <!-- Expense Stat Card -->
+        <app-card class="stat-card expense-card">
+          <div class="stat-header">
+            <span class="stat-label">Total Expenses</span>
+            <span class="stat-icon negative"><span class="material-icons">trending_down</span></span>
+          </div>
+          <div class="stat-value text-negative">{{ formatCurrency(summary.totalExpenses) }}</div>
+        </app-card>
 
-  </div>
+        <!-- Net Flow Stat Card -->
+        <app-card class="stat-card net-flow-card" [class.negative-deficit]="summary.netFlow < 0">
+          <div class="stat-header">
+            <span class="stat-label">Net Cash Flow</span>
+            <span class="stat-icon brand"><span class="material-icons">balance</span></span>
+          </div>
+          <div class="stat-value" [class.text-positive]="summary.netFlow >= 0" [class.deficit-pill]="summary.netFlow < 0">
+            {{ formatCurrency(summary.netFlow) }}
+          </div>
+        </app-card>
 
-  <!-- Charts -->
-  <div class="charts-row">
-
-    <!-- 📈 Spending Trend -->
-    <div class="chart-card chart-card--wide">
-      <div class="chart-card-header">
-        <span class="chart-title">Spending Trend</span>
-      </div>
-
-      <apx-chart
-        [series]="trendSeries"
-        [chart]="trendChart"
-        [xaxis]="trendXAxis"
-        [stroke]="trendStroke"
-        [dataLabels]="trendDataLabels"
-        [legend]="trendLegend"
-        [tooltip]="trendTooltip">
-      </apx-chart>
-    </div>
-
-    <!-- 🍩 Expense Breakdown -->
-    <div class="chart-card chart-card--donut">
-      <div class="chart-card-header">
-        <span class="chart-title">Expense Breakdown</span>
+        <app-card class="stat-card savings-card">
+          <div class="stat-header">
+            <span class="stat-label">Saving Rate</span>
+            <span class="stat-icon blue"><span class="material-icons">savings</span></span>
+          </div>
+          <div class="stat-value">{{ savingsRate | number:'1.0-0' }}%</div>
+        </app-card>
       </div>
 
-      <apx-chart
-        [series]="donutSeries"
-        [chart]="donutChart"
-        [labels]="donutLabels"
-        [plotOptions]="donutPlotOptions"
-        [responsive]="donutResponsive">
-      </apx-chart>
+      <!-- Contextual Insight banner -->
+      <app-card class="insight-card mt-3">
+        <div class="insight-layout">
+          <span class="material-icons insight-indicator">insights</span>
+          <div class="insight-body">
+            <h4 class="insight-heading">Monthly Insight & Suggestions</h4>
+            <ul class="insight-bullets mt-2">
+              <li *ngFor="let bullet of insightBullets" [innerHTML]="bullet"></li>
+            </ul>
+          </div>
+        </div>
+      </app-card>
+
+      <!-- Charts Row Layout -->
+      <div class="charts-grid mt-5">
+        
+        <!-- Trend chart card -->
+        <app-card class="chart-card">
+          <div class="chart-card-header mb-4">
+            <h3 class="chart-title">Income & Expense Trend</h3>
+            <span class="text-xs text-muted">Income and expenses over the last 6 months</span>
+          </div>
+          
+          <apx-chart
+            [series]="trendSeries"
+            [chart]="trendChart"
+            [xaxis]="trendXAxis"
+            [yaxis]="trendYAxis"
+            [stroke]="trendStroke"
+            [dataLabels]="trendDataLabels"
+            [legend]="trendLegend"
+            [tooltip]="trendTooltip"
+            [grid]="trendGrid"
+            [colors]="trendColors"
+            [markers]="trendMarkers">
+          </apx-chart>
+
+          <!-- Numeric Trend Table -->
+          <div class="table-scroll-wrapper mt-4">
+            <table class="premium-table">
+              <thead>
+                <tr>
+                  <th>Month</th>
+                  <th class="text-right">Income</th>
+                  <th class="text-right">Expense</th>
+                  <th class="text-right">Net Cash Flow</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let monthLabel of trendXAxis.categories; let i = index">
+                  <td class="text-semibold">{{ monthLabel }}</td>
+                  <td class="text-right positive">+{{ formatCurrency(getSeriesDataValue(0, i)) }}</td>
+                  <td class="text-right negative">-{{ formatCurrency(getSeriesDataValue(1, i)) }}</td>
+                  <td class="text-right font-mono" 
+                      [class.positive]="(getSeriesDataValue(0, i) - getSeriesDataValue(1, i)) >= 0" 
+                      [class.negative]="(getSeriesDataValue(0, i) - getSeriesDataValue(1, i)) < 0">
+                    {{ (getSeriesDataValue(0, i) - getSeriesDataValue(1, i)) >= 0 ? '+' : '' }}{{ formatCurrency(getSeriesDataValue(0, i) - getSeriesDataValue(1, i)) }}
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </app-card>
+
+        <!-- Category Donut Card -->
+        <app-card class="chart-card">
+          <div class="chart-card-header mb-4">
+            <h3 class="chart-title">Expense Distribution</h3>
+            <span class="text-xs text-muted">Spending by category</span>
+          </div>
+
+          <div class="donut-chart-container">
+            <apx-chart *ngIf="donutSeries.length > 0"
+              [series]="donutSeries"
+              [chart]="donutChart"
+              [labels]="donutLabels"
+              [plotOptions]="donutPlotOptions"
+              [colors]="donutColors"
+              [legend]="donutLegend"
+              [stroke]="donutStroke"
+              [tooltip]="donutTooltip">
+            </apx-chart>
+
+            <!-- Custom Center Donut Overlay mimicking user's mock design -->
+            <div class="donut-center-overlay" *ngIf="donutSeries.length > 0">
+              <svg class="progress-ring" width="150" height="150">
+                <!-- Background track -->
+                <circle
+                  class="progress-ring__track"
+                  stroke="var(--gray-150)"
+                  stroke-width="5"
+                  fill="transparent"
+                  r="62"
+                  cx="75"
+                  cy="75"
+                />
+                <!-- Active savings progress -->
+                <circle
+                  class="progress-ring__fill"
+                  stroke="#14b8a6"
+                  stroke-width="5"
+                  stroke-linecap="round"
+                  fill="transparent"
+                  r="62"
+                  cx="75"
+                  cy="75"
+                  stroke-dasharray="389.56"
+                  [attr.stroke-dashoffset]="strokeDashoffset"
+                />
+              </svg>
+              <div class="donut-center-content">
+                <span class="center-total-value">₹{{ summary.totalExpenses | number:'1.0-0' }}</span>
+                <span class="center-remaining-value">spent</span>
+              </div>
+            </div>
+
+            <div class="donut-empty-state" *ngIf="donutSeries.length === 0">
+              <span class="material-icons">pie_chart_outline</span>
+              <p class="empty-title">No categories logged yet</p>
+              <p class="empty-text">Transactions will distribute visually once expense categories are mapped.</p>
+            </div>
+          </div>
+
+          <!-- Custom Centered Legend -->
+          <div class="custom-donut-legend" *ngIf="donutSeries.length > 0">
+            <div *ngFor="let label of donutLabels; let i = index" class="legend-item">
+              <span class="legend-color-dot" [style.background-color]="donutColors[i % donutColors.length]"></span>
+              <span class="legend-label">{{ label }}</span>
+            </div>
+          </div>
+
+          <!-- Category Breakdown Table -->
+          <div class="table-scroll-wrapper mt-4" *ngIf="donutSeries.length > 0">
+            <table class="premium-table">
+              <thead>
+                <tr>
+                  <th>Category</th>
+                  <th class="text-right">Total Spent</th>
+                  <th class="text-right">Share</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let label of donutLabels; let i = index">
+                  <td class="text-semibold">
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                      <span class="legend-color-dot" [style.background-color]="donutColors[i % donutColors.length]" style="margin: 0; width: 8px; height: 8px;"></span>
+                      {{ label }}
+                    </div>
+                  </td>
+                  <td class="text-right font-mono negative">-{{ formatCurrency(donutSeries[i]) }}</td>
+                  <td class="text-right font-mono text-muted">{{ (donutSeries[i] / summary.totalExpenses) * 100 | number:'1.1-1' }}%</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </app-card>
+
+      </div>
+
     </div>
 
-  </div>
-
-  <!-- Loading Overlay -->
-  <div class="loading-overlay" *ngIf="loading">
-    <div class="spinner"></div>
-  </div>
+  </ng-container>
 
 </div>

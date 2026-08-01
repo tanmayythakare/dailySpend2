@@ -1,6 +1,7 @@
-import { Component } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
 import { LoadingService } from './core/services/loading.service';
+import { ThemeService } from './core/services/theme.service';
 import { trigger, transition, style, animate } from '@angular/animations';
 import { CommonModule } from '@angular/common';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
@@ -26,10 +27,16 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
     ])
   ]
 })
-export class AppComponent {
+export class AppComponent implements OnInit {
 
   loading$ = this.loadingService.loading$;
   title = 'dailyspend-frontend';
 
-  constructor(private loadingService: LoadingService) {}
+  constructor(
+    private loadingService: LoadingService,
+    private themeService: ThemeService
+  ) {}
+
+  ngOnInit(): void {}
 }
+

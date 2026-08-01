@@ -14,15 +14,15 @@ public class AnalyticsService {
         this.transactionRepository = transactionRepository;
     }
 
-    public BigDecimal getTotalIncome() {
-        return transactionRepository.totalIncome();
+    public BigDecimal getTotalIncome(Long userId) {
+        return transactionRepository.totalIncome(userId);
     }
 
-    public BigDecimal getTotalExpense() {
-        return transactionRepository.totalExpense();
+    public BigDecimal getTotalExpense(Long userId) {
+        return transactionRepository.totalExpense(userId);
     }
 
-    public BigDecimal getNetBalance() {
-        return getTotalIncome().subtract(getTotalExpense());
+    public BigDecimal getNetBalance(Long userId) {
+        return getTotalIncome(userId).subtract(getTotalExpense(userId));
     }
 }

@@ -10,6 +10,7 @@ public class DateRangeSummaryDto {
     private BigDecimal totalExpenses;
     private BigDecimal totalMoneyGiven;
     private BigDecimal totalMoneyTaken;
+    private BigDecimal totalIncome;
     private BigDecimal netCashFlow;
     private long transactionCount;
 
@@ -24,6 +25,7 @@ public class DateRangeSummaryDto {
             BigDecimal totalExpenses,
             BigDecimal totalMoneyGiven,
             BigDecimal totalMoneyTaken,
+            BigDecimal totalIncome,
             BigDecimal netCashFlow,
             long transactionCount) {
         this.startDate = startDate;
@@ -31,6 +33,7 @@ public class DateRangeSummaryDto {
         this.totalExpenses = totalExpenses;
         this.totalMoneyGiven = totalMoneyGiven;
         this.totalMoneyTaken = totalMoneyTaken;
+        this.totalIncome = totalIncome;
         this.netCashFlow = netCashFlow;
         this.transactionCount = transactionCount;
     }
@@ -75,6 +78,14 @@ public class DateRangeSummaryDto {
 
     public void setTotalMoneyTaken(BigDecimal totalMoneyTaken) {
         this.totalMoneyTaken = totalMoneyTaken;
+    }
+
+    public BigDecimal getTotalIncome() {
+        return totalIncome;
+    }
+
+    public void setTotalIncome(BigDecimal totalIncome) {
+        this.totalIncome = totalIncome;
     }
 
     public BigDecimal getNetCashFlow() {

@@ -3,6 +3,7 @@ package com.example.dailyspend.service;
 import com.example.dailyspend.dto.*;
 import com.example.dailyspend.entity.*;
 import com.example.dailyspend.exception.ResourceNotFoundException;
+import com.example.dailyspend.exception.ForbiddenException;
 import com.example.dailyspend.repository.*;
 import com.example.dailyspend.specification.TransactionSpecification;
 import com.example.dailyspend.util.SecurityUtils;
@@ -54,7 +55,8 @@ public class TransactionService {
 
     @Transactional(readOnly = true)
     public Optional<Transaction> findById(Long id) {
-        return transactionRepository.findById(id);
+        Long userId = securityUtils.getCurrentUserId();
+        return transactionRepository.findByIdAndUserId(id, userId);
     }
 
     @Transactional
@@ -112,6 +114,28 @@ public class TransactionService {
     }
 
     @Transactional
+    public Transaction createIncome(IncomeRequestDto request) {
+
+        Transaction tx = createBaseTransaction(
+                request.getAccountId(),
+                request.getCategoryId(),
+                null,
+                request.getDescription(),
+                request.getTransactionDate()
+        );
+
+        if (tx.getCategory() != null && !"INCOME".equals(tx.getCategory().getType())) {
+            throw new IllegalArgumentException("Category type mismatch: INCOME transactions require INCOME categories");
+        }
+
+        tx.setAmount(request.getAmount());
+        tx.setType(TransactionType.INCOME);
+        applyBalanceEffect(tx, true);
+
+        return transactionRepository.save(tx);
+    }
+
+    @Transactional
     public Transaction updateTransaction(Long transactionId, TransactionUpdateRequest request) {
 
         Long userId = securityUtils.getCurrentUserId();
@@ -120,8 +144,11 @@ public class TransactionService {
                 .orElseThrow(() -> new ResourceNotFoundException("Transaction not found"));
 
         if (!existing.getUser().getId().equals(userId)) {
-            throw new RuntimeException("Unauthorized");
+            throw new ForbiddenException("Unauthorized");
         }
+
+        // Revert old balance effect before applying new changes
+        applyBalanceEffect(existing, false);
 
         if (request.getAmount() != null) {
             existing.setAmount(request.getAmount());
@@ -139,13 +166,13 @@ public class TransactionService {
         }
 
         if (request.getAccountId() != null) {
-            Account account = accountRepository.findById(request.getAccountId())
+            Account account = accountRepository.findByIdAndUserId(request.getAccountId(), userId)
                     .orElseThrow(() -> new ResourceNotFoundException("Account not found"));
             existing.setAccount(account);
         }
 
         if (request.getCategoryId() != null) {
-            Category category = categoryRepository.findById(request.getCategoryId())
+            Category category = categoryRepository.findAccessibleById(request.getCategoryId(), userId)
                     .orElseThrow(() -> new ResourceNotFoundException("Category not found"));
             existing.setCategory(category);
         } else {
@@ -153,12 +180,15 @@ public class TransactionService {
         }
 
         if (request.getPersonId() != null) {
-            Person person = personRepository.findById(request.getPersonId())
+            Person person = personRepository.findByIdAndUserId(request.getPersonId(), userId)
                     .orElseThrow(() -> new ResourceNotFoundException("Person not found"));
             existing.setPerson(person);
         } else {
             existing.setPerson(null);
         }
+
+        // Apply new balance effect with updated details
+        applyBalanceEffect(existing, true);
 
         return transactionRepository.save(existing);
     }
@@ -166,8 +196,14 @@ public class TransactionService {
     @Transactional
     public void deleteTransaction(Long transactionId) {
 
+        Long userId = securityUtils.getCurrentUserId();
+
         Transaction tx = transactionRepository.findById(transactionId)
                 .orElseThrow(() -> new ResourceNotFoundException("Transaction not found"));
+
+        if (!tx.getUser().getId().equals(userId)) {
+            throw new ForbiddenException("Unauthorized");
+        }
 
         if (tx.isDeleted()) return;
 
@@ -182,7 +218,7 @@ public class TransactionService {
         Long userId = securityUtils.getCurrentUserId();
 
         Specification<Transaction> spec =
-                Specification.where(TransactionSpecification.hasUser(userId))
+                TransactionSpecification.hasUser(userId)
                         .and(TransactionSpecification.isNotDeleted())
                         .and(TransactionSpecification.hasAccount(filter.getAccountId()))
                         .and(TransactionSpecification.hasType(filter.getType()))
@@ -215,6 +251,7 @@ public class TransactionService {
                 account.setBalance(account.getBalance().subtract(amount));
                 break;
 
+            case INCOME:
             case MONEY_TAKEN:
                 account.setBalance(account.getBalance().add(amount));
                 break;
@@ -224,6 +261,25 @@ public class TransactionService {
         }
 
         accountRepository.save(account);
+    }
+
+    @Transactional
+    public List<Transaction> createBatchTransactions(List<BatchTransactionItemDto> requests) {
+        List<Transaction> created = new java.util.ArrayList<>();
+        for (BatchTransactionItemDto req : requests) {
+            Transaction tx = createBaseTransaction(
+                    req.getAccountId(),
+                    req.getCategoryId(),
+                    req.getPersonId(),
+                    req.getDescription(),
+                    req.getTransactionDate()
+            );
+            tx.setAmount(req.getAmount());
+            tx.setType(req.getType());
+            applyBalanceEffect(tx, true);
+            created.add(transactionRepository.save(tx));
+        }
+        return created;
     }
 
     private Transaction createBaseTransaction(
@@ -242,18 +298,20 @@ public class TransactionService {
 
         tx.setAccount(account);
         tx.setCategory(categoryId != null
-                ? categoryRepository.findById(categoryId).orElse(null)
+                ? categoryRepository.findAccessibleById(categoryId, userId)
+                        .orElseThrow(() -> new ResourceNotFoundException("Category not found"))
                 : null);
 
         tx.setPerson(personId != null
-                ? personRepository.findById(personId).orElse(null)
+                ? personRepository.findByIdAndUserId(personId, userId)
+                        .orElseThrow(() -> new ResourceNotFoundException("Person not found"))
                 : null);
 
         tx.setDescription(description);
         tx.setTransactionDate(date != null ? date : LocalDate.now());
 
         User user = new User();
-        user.setId(securityUtils.getCurrentUserId());
+        user.setId(userId);
         tx.setUser(user);
 
         return tx;

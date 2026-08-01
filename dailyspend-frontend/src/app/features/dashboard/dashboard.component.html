@@ -1,69 +1,199 @@
-<!-- Inline Delete Confirm Modal -->
-<div class="confirm-overlay" *ngIf="confirmDeleteAcctId">
-  <div class="confirm-modal">
-    <div class="confirm-icon">🗑️</div>
-    <h3 class="confirm-title">Delete Account?</h3>
-    <p class="confirm-text">This will permanently remove this account and all its transactions. Cannot be undone.</p>
-    <div class="confirm-actions">
-      <button class="confirm-btn-cancel" (click)="cancelDeleteAccount()">Cancel</button>
-      <button class="confirm-btn-delete" (click)="deleteAccount(confirmDeleteAcctId!)">Yes, Delete</button>
-    </div>
-  </div>
-</div>
+<div class="dashboard-container page-container">
 
-<div class="dashboard-container">
+  <!-- Personalized Hero Header -->
+  <app-page-header 
+    [title]="getGreeting() + (username ? ', ' + username : '') + '!'"
+    subtitle="Manage your personal assets, track liabilities, and view your latest financial transactions.">
+    <app-button (click)="openAddAccountDialog()">
+      <span class="material-icons">add</span> Add Account
+    </app-button>
+  </app-page-header>
 
-  <!-- Messages -->
+  <!-- Global Alerts -->
   <div *ngIf="successMessage || errorMessage" class="mb-4">
-    <div class="alert alert--success" *ngIf="successMessage">{{ successMessage }}</div>
-    <div class="alert alert--error"   *ngIf="errorMessage">{{ errorMessage }}</div>
-  </div>
-
-  <!-- Net Worth Hero — top of page -->
-  <div class="net-worth-card">
-    <h2>Total Net Worth</h2>
-    <h1>{{ formatCurrency(totalBalance) }}</h1>
-  </div>
-
-  <!-- Create Account -->
-  <div class="create-account-card">
-    <h2>Create New Account</h2>
-    <div class="form-grid">
-      <input type="text"   placeholder="Account name"    [(ngModel)]="newAccountName" />
-      <input type="number" placeholder="Initial balance" [(ngModel)]="newAccountBalance" />
-
-      <select [(ngModel)]="newAccountType">
-        <option value="" disabled selected>Select type</option>
-        <option *ngFor="let type of accountTypes" [value]="type">{{ type }}</option>
-      </select>
-
-      <button (click)="createAccount()" [disabled]="creating">
-        {{ creating ? 'Creating...' : 'Create Account' }}
-      </button>
+    <div class="alert alert--success" *ngIf="successMessage">
+      <span class="material-icons" style="font-size: 18px; margin-right: 8px; vertical-align: middle;">check_circle</span>
+      {{ successMessage }}
+    </div>
+    <div class="alert alert--error" *ngIf="errorMessage" style="display: flex; align-items: center; justify-content: space-between;">
+      <div>
+        <span class="material-icons" style="font-size: 18px; margin-right: 8px; vertical-align: middle;">error</span>
+        {{ errorMessage }}
+      </div>
+      <button class="btn btn--outline" style="padding: 4px 10px; font-size: 11px; height: auto;" (click)="loadAccounts(); loadRecentTransactions();">Retry</button>
     </div>
   </div>
 
-  <!-- Loading -->
-  <div *ngIf="loading" class="loading">Loading your accounts...</div>
-
-  <!-- Accounts Grid -->
-  <div class="accounts-grid" *ngIf="!loading && accounts.length > 0">
-    <div class="account-card" *ngFor="let account of accounts; trackBy: trackByAccount">
-      <h3>{{ account.name }}</h3>
-      <p><span>Type</span><strong>{{ account.type }}</strong></p>
-      <p><span>Balance</span><strong>{{ formatCurrency(account.balance) }}</strong></p>
-      <div style="display:flex;gap:8px;margin-top:16px;">
-        <button (click)="viewAccountDetails(account.id!)" style="flex:1">View</button>
-        <button (click)="requestDeleteAccount(account.id!)" style="flex:1">Delete</button>
+  <!-- Loading Skeletons -->
+  <div *ngIf="loading" class="dashboard-grid-layout">
+    <div class="main-column">
+      <app-skeleton type="card" [count]="1"></app-skeleton>
+      <div class="mt-4">
+        <app-skeleton type="line" [count]="4"></app-skeleton>
       </div>
     </div>
+    <div class="side-column">
+      <app-skeleton type="card" [count]="2"></app-skeleton>
+    </div>
   </div>
 
-  <!-- Empty State -->
-  <div *ngIf="!loading && accounts.length === 0" class="empty">
-    <div style="font-size:48px;margin-bottom:16px;opacity:0.3;">💳</div>
-    <div style="font-size:16px;font-weight:500;color:var(--gray-500);margin-bottom:8px;">No accounts yet</div>
-    <div style="font-size:14px;color:var(--gray-400);">Create your first account to start tracking your finances</div>
+  <!-- Content Grid Section -->
+  <div class="dashboard-grid-layout" *ngIf="!loading">
+    
+    <!-- Left/Main Column: Accounts & Net Worth -->
+    <div class="main-column">
+      <!-- Net Worth Card -->
+      <app-card class="net-worth-card">
+        <div class="net-worth-header">
+          <span class="net-worth-label">Total Net Worth</span>
+          
+          <div class="trend-badge" 
+               [class.trend-badge--positive]="monthlyChange >= 0" 
+               [class.trend-badge--negative]="monthlyChange < 0" 
+               *ngIf="hasMonthlyChange"
+               title="Calculated as monthly cash flow change divided by balance at start of month">
+            <span class="material-icons">{{ monthlyChange >= 0 ? 'trending_up' : 'trending_down' }}</span>
+            <span>{{ monthlyChange >= 0 ? '+' : '' }}{{ monthlyChangePercentage | number:'1.1-1' }}% this month</span>
+          </div>
+        </div>
+        
+        <h2 class="net-worth-value">{{ formatCurrency(totalBalance) }}</h2>
+
+        <div class="net-worth-breakdown">
+          <div class="breakdown-item">
+            <span class="breakdown-icon cash"><span class="material-icons">payments</span></span>
+            <div>
+              <span class="breakdown-label">Cash Assets</span>
+              <span class="breakdown-value">{{ formatCurrency(cashBalance) }}</span>
+            </div>
+          </div>
+          <div class="breakdown-item">
+            <span class="breakdown-icon bank"><span class="material-icons">account_balance</span></span>
+            <div>
+              <span class="breakdown-label">Bank Accounts</span>
+              <span class="breakdown-value">{{ formatCurrency(bankBalance) }}</span>
+            </div>
+          </div>
+          <div class="breakdown-item">
+            <span class="breakdown-icon credit"><span class="material-icons">credit_card</span></span>
+            <div>
+              <span class="breakdown-label">Credit Liabilities</span>
+              <span class="breakdown-value">{{ formatCurrency(creditBalance) }}</span>
+            </div>
+          </div>
+        </div>
+      </app-card>
+
+      <!-- Accounts Section -->
+      <div class="accounts-section mt-4">
+        <div class="section-header">
+          <h2 class="section-title">My Accounts</h2>
+        </div>
+
+        <app-empty-state 
+          *ngIf="accounts.length === 0"
+          title="Create an Account"
+          text="Get started by adding your cash ledger, bank accounts, or credit cards."
+          icon="account_balance_wallet"
+          actionText="Add Account"
+          (actionClicked)="openAddAccountDialog()">
+        </app-empty-state>
+
+        <div class="accounts-grid" *ngIf="accounts.length > 0">
+          <app-card [hoverable]="true" *ngFor="let account of accounts; trackBy: trackByAccount" class="account-grid-card">
+            <div class="account-card-header">
+              <span class="account-icon" [class]="account.type.toLowerCase()">
+                <span class="material-icons" *ngIf="account.type === 'CASH'">payments</span>
+                <span class="material-icons" *ngIf="account.type === 'BANK'">account_balance</span>
+                <span class="material-icons" *ngIf="account.type === 'CREDIT'">credit_card</span>
+              </span>
+              
+              <!-- Context actions using standard matMenu -->
+              <button [matMenuTriggerFor]="menu" class="btn-more" aria-label="Account actions" (click)="$event.stopPropagation()">
+                <span class="material-icons">more_vert</span>
+              </button>
+              <mat-menu #menu="matMenu" xPosition="before" class="premium-menu">
+                <button mat-menu-item (click)="viewAccountDetails(account.id!)">
+                  <span class="material-icons">visibility</span>
+                  <span>View Ledger</span>
+                </button>
+                <button mat-menu-item (click)="deleteAccount(account.id!)" class="menu-item-danger">
+                  <span class="material-icons">archive</span>
+                  <span>Archive Account</span>
+                </button>
+              </mat-menu>
+            </div>
+            
+            <div class="account-card-body" (click)="viewAccountDetails(account.id!)">
+              <h3 class="account-name">{{ account.name }}</h3>
+              <div class="account-balance">{{ formatCurrency(account.balance) }}</div>
+            </div>
+          </app-card>
+
+          <!-- Add Account Placeholder Card -->
+          <div class="add-account-placeholder" (click)="openAddAccountDialog()" role="button" tabindex="0"
+               (keyup.enter)="openAddAccountDialog()" aria-label="Add a new account">
+            <span class="material-icons add-placeholder-icon">add_circle_outline</span>
+            <span class="add-placeholder-label">Add Account</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Right Column: Recent Activity Timeline -->
+    <div class="side-column">
+      <div class="section-header justify-between">
+        <h2 class="section-title">Recent Activity</h2>
+        <a routerLink="/transactions" class="text-link" *ngIf="recentTransactions.length > 0">View All</a>
+      </div>
+
+      <app-empty-state
+        *ngIf="recentTransactions.length === 0"
+        title="No activity yet"
+        text="Your recent expenses and earnings will show up here."
+        icon="receipt_long"
+        actionText="Add Transaction"
+        actionVariant="outline"
+        (actionClicked)="navigateToAddTransaction()">
+      </app-empty-state>
+
+      <app-card *ngIf="recentTransactions.length > 0" class="activity-card">
+        <div class="activity-timeline">
+          <div class="timeline-item" *ngFor="let tx of recentTransactions; trackBy: trackByTransaction">
+            <div class="timeline-dot-container">
+              <div class="timeline-dot" [class]="tx.type.toLowerCase()">
+                <span class="material-icons" *ngIf="tx.type === 'EXPENSE'">arrow_downward</span>
+                <span class="material-icons" *ngIf="tx.type === 'INCOME'">arrow_upward</span>
+                <span class="material-icons" *ngIf="tx.type === 'MONEY_TAKEN'">arrow_upward</span>
+                <span class="material-icons" *ngIf="tx.type === 'MONEY_GIVEN'">arrow_downward</span>
+              </div>
+              <div class="timeline-line"></div>
+            </div>
+
+            <div class="timeline-content">
+              <div class="timeline-main-info">
+                <span class="timeline-desc" [class.text-muted]="!tx.description">{{ tx.description || 'No description' }}</span>
+                <span class="timeline-amount" 
+                      [class.positive]="tx.type === 'INCOME' || tx.type === 'MONEY_TAKEN'" 
+                      [class.negative]="tx.type === 'EXPENSE' || tx.type === 'MONEY_GIVEN'">
+                  {{ (tx.type === 'INCOME' || tx.type === 'MONEY_TAKEN') ? '+' : '-' }}{{ formatCurrency(tx.amount) }}
+                </span>
+              </div>
+              <div class="timeline-meta">
+                <span>{{ tx.transactionDate | date:'dd MMM yyyy' }}</span>
+                <span class="meta-dot"></span>
+                <span>{{ formatType(tx.type) | titlecase }}</span>
+                <ng-container *ngIf="tx.account">
+                  <span class="meta-dot"></span>
+                  <span class="meta-account">{{ tx.account.name }}</span>
+                </ng-container>
+              </div>
+            </div>
+          </div>
+        </div>
+      </app-card>
+    </div>
+
   </div>
 
 </div>

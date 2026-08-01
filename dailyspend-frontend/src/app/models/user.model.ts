@@ -4,3 +4,10 @@ export interface User {
   email: string;
   roles: string[];
 }
+
+export interface UserProfile {
+  username: string;
+  upiId: string;
+  upiDisplayName: string;
+}
+

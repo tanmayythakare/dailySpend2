@@ -1,0 +1,219 @@
+.schedules-container {
+  display: flex;
+  flex-direction: column;
+}
+
+.stats-row {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: var(--space-4);
+
+  @media (max-width: 600px) {
+    grid-template-columns: 1fr;
+  }
+}
+
+.stat-card {
+  display: flex;
+  flex-direction: column;
+  padding: var(--space-4) var(--space-5) !important;
+  
+  .stat-label {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--gray-500);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  .stat-value {
+    font-size: 28px;
+    font-weight: 700;
+    color: var(--gray-900);
+    margin: var(--space-1) 0;
+  }
+
+  .stat-desc {
+    font-size: 12px;
+    color: var(--gray-400);
+  }
+}
+
+.schedules-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: var(--space-4);
+}
+
+.schedule-card {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  border: 1px solid var(--gray-200);
+  transition: all var(--transition-medium);
+  padding: var(--space-4) !important;
+
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
+    border-color: var(--primary-light);
+  }
+
+  &.paused {
+    opacity: 0.7;
+    background: var(--gray-50);
+    
+    .schedule-desc {
+      text-decoration: line-through;
+      color: var(--gray-400);
+    }
+  }
+}
+
+.schedule-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+
+  .title-section {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .schedule-desc {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--gray-800);
+    margin: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .amount-section {
+    font-size: 18px;
+    font-weight: 700;
+    white-space: nowrap;
+    margin-left: var(--space-3);
+
+    &.income {
+      color: var(--positive);
+    }
+
+    &.expense {
+      color: var(--negative);
+    }
+  }
+}
+
+.badge-row {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  border-radius: var(--radius-sm);
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+
+  &.badge-expense {
+    background: var(--negative-bg);
+    color: var(--negative);
+  }
+
+  &.badge-income {
+    background: var(--positive-bg);
+    color: var(--positive);
+  }
+
+  &.badge-frequency {
+    background: var(--gray-100);
+    color: var(--gray-700);
+  }
+}
+
+.schedule-details {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  font-size: 13px;
+  color: var(--gray-600);
+  border-bottom: 1px solid var(--gray-100);
+  padding-bottom: var(--space-3);
+
+  .detail-row {
+    display: flex;
+    justify-content: space-between;
+  }
+
+  .detail-label {
+    color: var(--gray-400);
+  }
+
+  .detail-value {
+    color: var(--gray-800);
+    font-weight: 500;
+  }
+}
+
+.schedule-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--space-2);
+
+  .btn-action {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    background: transparent;
+    border: 1px solid var(--gray-200);
+    border-radius: var(--radius-md);
+    padding: var(--space-2) var(--space-3);
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--gray-600);
+    cursor: pointer;
+    transition: all var(--transition-fast);
+
+    .material-icons {
+      font-size: 16px;
+    }
+
+    &:hover {
+      background: var(--gray-100);
+      color: var(--gray-900);
+      border-color: var(--gray-300);
+    }
+
+    &.btn-pause:hover {
+      background: #fef3c7;
+      color: #d97706;
+      border-color: #fcd34d;
+    }
+
+    &.btn-resume:hover {
+      background: #d1fae5;
+      color: #059669;
+      border-color: #6ee7b7;
+    }
+
+    &.btn-delete:hover {
+      background: var(--negative-bg);
+      color: var(--negative);
+      border-color: rgba(244, 63, 94, 0.2);
+    }
+  }
+}
+
+.loading-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}

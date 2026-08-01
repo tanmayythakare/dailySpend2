@@ -5,6 +5,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.security.access.AccessDeniedException;
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
@@ -13,6 +14,22 @@ public class GlobalExceptionHandler {
         return new ResponseEntity<>(
                 new ApiError(HttpStatus.NOT_FOUND.value(), ex.getMessage()),
                 HttpStatus.NOT_FOUND
+        );
+    }
+
+    @ExceptionHandler(ForbiddenException.class)
+    public ResponseEntity<ApiError> handleForbidden(ForbiddenException ex) {
+        return new ResponseEntity<>(
+                new ApiError(HttpStatus.FORBIDDEN.value(), ex.getMessage()),
+                HttpStatus.FORBIDDEN
+        );
+    }
+
+    @ExceptionHandler({IllegalArgumentException.class, IllegalStateException.class})
+    public ResponseEntity<ApiError> handleBadRequest(RuntimeException ex) {
+        return new ResponseEntity<>(
+                new ApiError(HttpStatus.BAD_REQUEST.value(), ex.getMessage()),
+                HttpStatus.BAD_REQUEST
         );
     }
     @ExceptionHandler(MethodArgumentNotValidException.class)
@@ -28,6 +45,14 @@ public class GlobalExceptionHandler {
         return new ResponseEntity<>(
                 new ApiError(HttpStatus.BAD_REQUEST.value(), errorMessage),
                 HttpStatus.BAD_REQUEST
+        );
+    }
+
+    @ExceptionHandler(AccessDeniedException.class)
+    public ResponseEntity<ApiError> handleAccessDenied(AccessDeniedException ex) {
+        return new ResponseEntity<>(
+                new ApiError(HttpStatus.FORBIDDEN.value(), "You do not have access to this record"),
+                HttpStatus.FORBIDDEN
         );
     }
 

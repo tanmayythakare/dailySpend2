@@ -2,7 +2,7 @@
 export interface Transaction {
   id:              number;
   amount:          number;
-  type:            'EXPENSE' | 'MONEY_GIVEN' | 'MONEY_TAKEN';
+  type:            'EXPENSE' | 'MONEY_GIVEN' | 'MONEY_TAKEN' | 'INCOME';
   description?:    string;
   transactionDate: string;
   account: {
@@ -38,6 +38,14 @@ export interface MoneyGivenRequest {
 export interface MoneyTakenRequest {
   accountId:       number;
   personId:        number;
+  amount:          number;
+  description?:    string;
+  transactionDate: string;
+}
+
+export interface IncomeRequest {
+  accountId:       number;
+  categoryId?:     number | null;
   amount:          number;
   description?:    string;
   transactionDate: string;

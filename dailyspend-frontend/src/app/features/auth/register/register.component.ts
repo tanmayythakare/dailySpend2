@@ -1,13 +1,12 @@
 import { Component } from '@angular/core';
-import { CommonModule } from '@angular/common';
-import { FormsModule } from '@angular/forms';
-import { Router, RouterLink } from '@angular/router';
+import { Router } from '@angular/router';
 import { AuthService } from '../../../core/services/auth.service';
+import { SHARED_IMPORTS } from '../../../shared/shared.imports';
 
 @Component({
   selector: 'app-register',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink],
+  imports: [SHARED_IMPORTS],
   templateUrl: './register.component.html',
   styleUrls: ['./register.component.scss']
 })
@@ -19,6 +18,11 @@ export class RegisterComponent {
     password: ''
   };
 
+  confirmPassword = '';
+  showPassword = false;
+  showPasswordConfirm = false;
+  agreeToTerms = false;
+
   loading        = false;
   errorMessage   = '';
   successMessage = '';
@@ -26,12 +30,24 @@ export class RegisterComponent {
   constructor(private authService: AuthService, private router: Router) {}
 
   onSubmit(): void {
-    if (!this.registerData.username || !this.registerData.password) {
+    if (!this.registerData.username || !this.registerData.password || !this.confirmPassword) {
       this.errorMessage = 'Please fill in all fields';
+      return;
+    }
+    if (this.registerData.username.length < 3) {
+      this.errorMessage = 'Username must be at least 3 characters long';
       return;
     }
     if (this.registerData.password.length < 8) {
       this.errorMessage = 'Password must be at least 8 characters long';
+      return;
+    }
+    if (this.registerData.password !== this.confirmPassword) {
+      this.errorMessage = 'Passwords do not match';
+      return;
+    }
+    if (!this.agreeToTerms) {
+      this.errorMessage = 'You must agree to the Terms of Service and Privacy Policy';
       return;
     }
 

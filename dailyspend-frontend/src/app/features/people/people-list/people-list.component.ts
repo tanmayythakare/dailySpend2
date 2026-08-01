@@ -5,11 +5,14 @@ import { Router } from '@angular/router';
 import { Subject, takeUntil } from 'rxjs';
 import { PersonService } from '../../../core/services/person.service';
 import { PersonBalanceDto } from '../../../models/person.model';
+import { MatDialog } from '@angular/material/dialog';
+import { SHARED_IMPORTS } from '../../../shared/shared.imports';
+import { QRModalComponent } from '../../../shared/components/qr-modal/qr-modal.component';
 
 @Component({
   selector: 'app-people-list',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, SHARED_IMPORTS],
   templateUrl: './people-list.component.html',
   styleUrls: ['./people-list.component.scss']
 })
@@ -25,7 +28,15 @@ export class PeopleListComponent implements OnInit, OnDestroy {
   showAddForm    = false;
   newPersonName  = '';
 
-  constructor(private personService: PersonService, private router: Router) {}
+  totalOwedToYou = 0;
+  totalYouOwe    = 0;
+  activeLedgers  = 0;
+
+  constructor(
+    private personService: PersonService, 
+    private router: Router,
+    private dialog: MatDialog
+  ) {}
 
   ngOnInit(): void { this.loadPeople(); }
 
@@ -41,9 +52,34 @@ export class PeopleListComponent implements OnInit, OnDestroy {
     this.personService.getAllWithBalances()
       .pipe(takeUntil(this.destroy$))
       .subscribe({
-        next: (data) => { this.people = data; this.loading = false; },
+        next: (data) => {
+          this.people = data;
+          this.calculateSummary();
+          this.loading = false;
+        },
         error: () => { this.errorMessage = 'Failed to load people. Please try again.'; this.loading = false; }
       });
+  }
+
+  calculateSummary(): void {
+    let owed = 0;
+    let owe = 0;
+    let active = 0;
+
+    this.people.forEach(p => {
+      const bal = p.balance ?? 0;
+      if (bal > 0) {
+        owed += bal;
+        active++;
+      } else if (bal < 0) {
+        owe += Math.abs(bal);
+        active++;
+      }
+    });
+
+    this.totalOwedToYou = owed;
+    this.totalYouOwe = owe;
+    this.activeLedgers = active;
   }
 
   addPerson(): void {
@@ -66,9 +102,13 @@ export class PeopleListComponent implements OnInit, OnDestroy {
       });
   }
 
-  deletePerson(personId: number): void {
-    if (!confirm('Are you sure you want to delete this person?')) return;
+  confirmDeletePersonId: number | null = null;
 
+  requestDeletePerson(id: number): void { this.confirmDeletePersonId = id; }
+  cancelDeletePerson(): void { this.confirmDeletePersonId = null; }
+
+  deletePerson(personId: number): void {
+    this.confirmDeletePersonId = null;
     this.loading = true;
     this.errorMessage = '';
     this.successMessage = '';
@@ -102,5 +142,16 @@ export class PeopleListComponent implements OnInit, OnDestroy {
     const abs = Math.abs(value);
     const fmt = abs.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
     return value < 0 ? `-₹${fmt}` : `₹${fmt}`;
+  }
+
+  openQRCollectModal(person: PersonBalanceDto, event: Event): void {
+    event.stopPropagation();
+    this.dialog.open(QRModalComponent, {
+      width: '440px',
+      data: {
+        personId: person.id,
+        personName: person.name
+      }
+    });
   }
 }

@@ -1,43 +1,104 @@
 <div class="auth-page">
   <div class="auth-card">
 
-    <div class="auth-brand">
-      <div class="auth-brand-icon">₹</div>
-      <div class="auth-brand-name">DailySpend</div>
-    </div>
+    <div class="auth-form-container">
+      <div class="auth-brand">
+        <div class="logo-icon">₹</div>
+        <span>DailySpend</span>
+      </div>
 
-    <h1 class="auth-title">Create your account</h1>
-    <p class="auth-subtitle">Start tracking your finances today</p>
+      <h1 class="auth-title">Create your account</h1>
+      <p class="auth-subtitle">Start tracking your finances today</p>
 
-    <div class="alert alert--error"   *ngIf="errorMessage">{{ errorMessage }}</div>
-    <div class="alert alert--success" *ngIf="successMessage">{{ successMessage }}</div>
 
-    <form class="auth-form" (ngSubmit)="onSubmit()">
+      <div class="alert alert--error"   *ngIf="errorMessage">{{ errorMessage }}</div>
+      <div class="alert alert--success" *ngIf="successMessage">{{ successMessage }}</div>
 
-      <div class="form-field">
-        <label for="username">Username</label>
-        <input type="text" id="username" name="username"
-          [(ngModel)]="registerData.username"
+      <form class="auth-form" (ngSubmit)="onSubmit()">
+
+        <app-input
+          id="username"
+          label="Username"
           placeholder="Choose a username"
-          required autocomplete="username" />
+          [(ngModel)]="registerData.username"
+          name="username"
+          [required]="true"
+          autocomplete="username">
+        </app-input>
+        <span class="help-text" style="font-size: 11px; color: var(--gray-450); margin-top: -8px; margin-bottom: 8px; display: block;">
+          Username must be unique and contain at least 3 characters.
+        </span>
+
+        <div class="password-field-container" style="position: relative;">
+          <app-input
+            id="password"
+            label="Password"
+            [type]="showPassword ? 'text' : 'password'"
+            placeholder="Create a strong password"
+            [(ngModel)]="registerData.password"
+            name="password"
+            [required]="true"
+            autocomplete="new-password">
+            <button 
+              type="button" 
+              class="password-toggle-btn"
+              (click)="showPassword = !showPassword"
+              style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%); background: none; border: none; cursor: pointer; color: var(--gray-400); z-index: 10; display: flex; align-items: center; justify-content: center; padding: 0;">
+              <span class="material-icons" style="font-size: 18px;">{{ showPassword ? 'visibility_off' : 'visibility' }}</span>
+            </button>
+          </app-input>
+        </div>
+        <span class="help-text" style="font-size: 11px; color: var(--gray-450); margin-top: -8px; margin-bottom: 12px; display: block;">
+          Password must be at least 8 characters long.
+        </span>
+
+        <div class="password-field-container" style="position: relative;">
+          <app-input
+            id="confirmPassword"
+            label="Confirm Password"
+            [type]="showPasswordConfirm ? 'text' : 'password'"
+            placeholder="Confirm your password"
+            [(ngModel)]="confirmPassword"
+            name="confirmPassword"
+            [required]="true"
+            autocomplete="new-password">
+            <button 
+              type="button" 
+              class="password-toggle-btn"
+              (click)="showPasswordConfirm = !showPasswordConfirm"
+              style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%); background: none; border: none; cursor: pointer; color: var(--gray-400); z-index: 10; display: flex; align-items: center; justify-content: center; padding: 0;">
+              <span class="material-icons" style="font-size: 18px;">{{ showPasswordConfirm ? 'visibility_off' : 'visibility' }}</span>
+            </button>
+          </app-input>
+        </div>
+
+        <div class="auth-terms-checkbox" style="display: flex; align-items: flex-start; gap: 8px; margin-top: 12px; margin-bottom: 16px;">
+          <input 
+            type="checkbox" 
+            id="agreeToTerms" 
+            [(ngModel)]="agreeToTerms" 
+            name="agreeToTerms" 
+            required
+            style="margin-top: 3px; cursor: pointer;"
+          />
+          <label for="agreeToTerms" style="font-size: 12.5px; color: var(--gray-600); line-height: 1.4; cursor: pointer;">
+            I agree to the <a href="#" (click)="$event.preventDefault()">Terms of Service</a> and <a href="#" (click)="$event.preventDefault()">Privacy Policy</a>
+          </label>
+        </div>
+
+        <app-button
+          variant="primary"
+          type="submit"
+          [loading]="loading"
+          class="w-full">
+          Create Account
+        </app-button>
+
+      </form>
+
+      <div class="auth-footer">
+        Already have an account? <a routerLink="/login">Sign in</a>
       </div>
-
-      <div class="form-field">
-        <label for="password">Password</label>
-        <input type="password" id="password" name="password"
-          [(ngModel)]="registerData.password"
-          placeholder="Create a strong password"
-          required autocomplete="new-password" />
-      </div>
-
-      <button class="btn btn--primary w-full" type="submit" [disabled]="loading">
-        {{ loading ? 'Creating account...' : 'Create Account' }}
-      </button>
-
-    </form>
-
-    <div class="auth-footer">
-      Already have an account? <a routerLink="/login">Sign in</a>
     </div>
 
   </div>

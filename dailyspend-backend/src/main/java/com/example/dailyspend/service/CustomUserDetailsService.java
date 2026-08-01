@@ -26,7 +26,8 @@ public UserDetails loadUserByUsername(String username)
             .orElseThrow(() ->
                     new UsernameNotFoundException("User not found"));
 
-    return new org.springframework.security.core.userdetails.User(
+    return new com.example.dailyspend.config.CustomUserDetails(
+            user.getId(),
             user.getUsername(),
             user.getPassword(),
             List.of(new SimpleGrantedAuthority("ROLE_USER"))
