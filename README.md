@@ -1,6 +1,6 @@
 # 💸 DailySpend — Personal Finance Tracker
 
-> A full-stack web application to track your daily expenses, income, and money lent/borrowed — built with Spring Boot and Angular.
+> A full-stack web application to track your daily expenses, income, recurring transactions, and money lent/borrowed — built with Spring Boot and Angular.
 
 ---
 
@@ -25,7 +25,10 @@ Most people struggle to keep track of where their money goes. DailySpend solves 
   - **Money Taken** — Money you received from someone
 - 👥 **People Ledger** — Track balances with individual people (who owes whom)
 - 🗂️ **Categories** — Organize expenses with built-in and custom categories
-- 📊 **Reports & Charts** — Visual spending trends and category breakdowns
+- 📊 **Reports & Analytics** — Visual spending trends, category breakdowns, and date-range summaries
+- 🔁 **Recurring Transactions** — Set up daily/weekly/monthly/quarterly/yearly auto-entries
+- 💸 **Bill Splitter** — Split expenses across multiple people
+- 🌙 **Dark Mode** — Full dark theme support
 - 🔍 **Filter & Search** — Filter transactions by type, account, and date range
 - 📥 **Export to CSV** — Download your transaction history
 - 📱 **Responsive Design** — Works on desktop and mobile
@@ -167,6 +170,51 @@ The app will open at **http://localhost:4200** 🎉
 
 ---
 
+## 🐳 Docker Setup (Backend + Database)
+
+> Use Docker Compose to spin up the backend and PostgreSQL together — no manual DB setup required.
+
+### Prerequisites
+- [Docker Desktop](https://www.docker.com/products/docker-desktop/) installed and running
+
+### Steps
+
+1. **Copy the environment template** and fill in your values:
+
+```bash
+cp .env.example .env
+```
+
+Edit `.env` with your preferred database password and a strong JWT secret.
+
+2. **Build and start backend + database:**
+
+```bash
+docker compose up --build
+```
+
+The backend will be available at **http://localhost:8080** once the database health check passes.
+
+3. **Run the frontend separately** (in a new terminal):
+
+```bash
+cd dailyspend-frontend
+npm install
+npm start
+```
+
+The app will open at **http://localhost:4200** 🎉
+
+4. **Stop everything:**
+
+```bash
+docker compose down
+```
+
+> To also remove the database volume (reset all data): `docker compose down -v`
+
+---
+
 ## 🖥️ Usage
 
 1. **Register** — Go to `http://localhost:4200/register` and create an account.
@@ -203,27 +251,28 @@ dailyspend/
 │   │   └── util/                # Helper utilities
 │   ├── src/main/resources/
 │   │   ├── application.yaml     # Main configuration
-│   │   └── db/migration/        # Flyway SQL migration files
+│   │   └── db/migration/        # Flyway SQL migration files (V1–V13)
+│   ├── Dockerfile               # Multi-stage Docker image for backend
 │   └── pom.xml                  # Maven dependencies
 │
 ├── dailyspend-frontend/         # Angular frontend
 │   ├── src/app/
 │   │   ├── core/                # Services, interceptors, guards
-│   │   ├── features/            # Pages (dashboard, transactions, people, reports)
+│   │   ├── features/            # Pages (dashboard, transactions, people, reports, schedules, split, settings)
 │   │   ├── layout/              # App shell / sidebar
 │   │   ├── models/              # TypeScript interfaces
-│   │   └── shared/              # Reusable imports
-│   ├── src/environments/        # Environment configuration
+│   │   └── shared/              # Reusable components & imports
 │   └── package.json             # Node dependencies
 │
-└── docs/                        # Architecture and rules documentation
+├── docs/                        # Architecture and rules documentation
+│   └── Screenshots/             # App screenshots
+├── docker-compose.yml           # Docker Compose (backend + PostgreSQL)
+└── .env.example                 # Environment variables template
 ```
 
 ---
 
 ## 📸 Screenshots
-
-> _Screenshots coming soon!_
 
 | Page | Preview |
 |---|---|
@@ -260,12 +309,11 @@ The backend exposes a REST API. Here are the main endpoints:
 Here are some features planned for future versions:
 
 - [ ] 📧 Email notifications for large transactions
-- [ ] 🌙 Dark mode support
 - [ ] 📱 Mobile app (React Native or Flutter)
-- [ ] 🔁 Recurring transaction support (e.g., monthly rent)
 - [ ] 💱 Multi-currency support
 - [ ] 🔔 Budget alerts when spending exceeds a limit
 - [ ] 👨‍👩‍👧 Shared accounts for families
+- [ ] 🤖 AI-powered spending advisor
 
 ---
 
