@@ -1,392 +1,293 @@
-# 💸 DailySpend — Personal Finance Tracker
+# 💸 DailySpend v2 — Containerized Personal Finance Platform
 
-> A full-stack web application to track your daily expenses, income, recurring transactions, and money lent/borrowed — built with Spring Boot and Angular.
+<p align="center">
+  <a href="https://adoptium.net/"><img src="https://img.shields.io/badge/Java-17-orange?style=flat-square&logo=openjdk" alt="Java 17"></a>
+  <a href="https://spring.io/projects/spring-boot"><img src="https://img.shields.io/badge/Spring%20Boot-3.5-brightgreen?style=flat-square&logo=springboot" alt="Spring Boot 3.5"></a>
+  <a href="https://angular.dev/"><img src="https://img.shields.io/badge/Angular-17.3-red?style=flat-square&logo=angular" alt="Angular 17.3"></a>
+  <a href="https://www.postgresql.org/"><img src="https://img.shields.io/badge/PostgreSQL-16-blue?style=flat-square&logo=postgresql" alt="PostgreSQL 16"></a>
+  <a href="https://www.docker.com/"><img src="https://img.shields.io/badge/Docker%20Compose-Containerized-2496ED?style=flat-square&logo=docker" alt="Docker Compose"></a>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-yellow?style=flat-square" alt="MIT License"></a>
+  <a href="#-quickstart--docker-deployment"><img src="https://img.shields.io/badge/Deployment-Local-informational?style=flat-square" alt="Local Deployment"></a>
+</p>
+
+<p align="center">
+  Next-generation full-stack personal finance platform with Docker containerization, recurring transaction automation, peer debt ledgers, and visual financial analytics.
+</p>
 
 ---
 
-## 📖 Description
+> [!NOTE]
+> **Evolutionary Project: Built on DailySpend v1**
+> This repository is **DailySpend v2**, building directly upon the foundation of **[DailySpend v1](https://github.com/tanmayythakare/dailySpend)**.
+> **Key Upgrades in v2**:
+> - 🐳 **1-Command Docker Compose**: Containerized PostgreSQL 16 + multi-stage Spring Boot backend with healthchecks.
+> - 🔁 **Recurring Transactions Engine**: Automated scheduling for daily, weekly, monthly, and yearly recurring expenses.
+> - 📊 **Deep Analytics Module**: Date-range aggregates, category breakdown summaries, and UPI payment payload helpers.
+> - 👤 **User Profiles & Batch Processing**: Support for user profiles and batch transaction entries.
 
-**DailySpend** is a personal finance tracking app designed to help you take control of your money. Whether you're recording a grocery bill, tracking money you lent to a friend, or monitoring your monthly income, DailySpend keeps it all organized in one place.
+---
 
-The app is built for everyday use — it's simple enough for beginners yet powerful enough to give you real financial insights through charts and reports.
+## 📸 Visual Showcase
 
-**Why does it exist?**
-Most people struggle to keep track of where their money goes. DailySpend solves this by giving you a clean dashboard, smart categorization, and a people ledger so you always know who owes you (and who you owe).
+| Dashboard & Accounts | Transactions & Ledger |
+| :---: | :---: |
+| ![Dashboard](docs/Screenshots/dashboard.png) | ![Transactions](docs/Screenshots/transaction.png) |
+| **People Ledger (Debts & Loans)** | **Reports & Expense Breakdowns** |
+| ![People](docs/Screenshots/people.png) | ![Reports](docs/Screenshots/reports.png) |
+
+---
+
+## 🏛️ System Architecture
+
+```mermaid
+flowchart TD
+    subgraph ClientLayer ["Client Presentation Layer"]
+        SPA["Angular 17.3 SPA\n(:4200)\nAngular Material & ApexCharts"]
+    end
+
+    subgraph DockerEnv ["Docker Compose Environment"]
+        API["Spring Boot 3.5 API Container\n(:8080)\nNon-root Eclipse Temurin 17"]
+        DB[("PostgreSQL 16 Alpine\n(:5432)\nNamed Volume: dailyspend_postgres_data")]
+    end
+
+    subgraph CoreServices ["Backend Application Modules"]
+        Auth["JWT Security & Auth Filter"]
+        TxService["Transaction & Account Service"]
+        RecurringEngine["Recurring Transaction Engine\n(Daily / Weekly / Monthly / Yearly)"]
+        Analytics["Analytics & Summary Engine"]
+        Flyway["Flyway Migration Engine\n(db/migration)"]
+    end
+
+    SPA -->|"REST Requests + Bearer Token"| API
+    API --> Auth
+    Auth --> TxService
+    Auth --> RecurringEngine
+    Auth --> Analytics
+    TxService -->|"Flyway Managed Schema"| DB
+    RecurringEngine -->|"Persist Schedules"| DB
+    Analytics -->|"Aggregate Queries"| DB
+```
+
+---
+
+## 📖 What is DailySpend v2?
+
+**DailySpend v2** is a personal finance ecosystem built for developers and users who want reliable, containerized financial management. It eliminates the manual burden of recalculating loans, splitting group tabs, and manually entering recurring bills every month.
+
+### Key Problem It Solves:
+1. **Recurring Bill Fatigue**: Automatically handles recurring rent, subscriptions, and utility bills.
+2. **Peer Debts & Group Transparency**: Real-time peer balance tracking so you know exactly who owes whom across multiple shared expenses.
+3. **Frictionless Local Execution**: No need to install and configure PostgreSQL or Java dependencies manually — Docker Compose spins up the entire backend and database stack in seconds.
 
 ---
 
 ## ✨ Features
 
-- 🔐 **User Authentication** — Secure registration and login with JWT tokens
-- 🏦 **Account Management** — Create and manage multiple accounts (Cash, Bank, Credit)
-- 💳 **Transaction Tracking** — Record three types of transactions:
-  - **Expense** — Money you spent
-  - **Money Given** — Money you lent to someone
-  - **Money Taken** — Money you received from someone
-- 👥 **People Ledger** — Track balances with individual people (who owes whom)
-- 🗂️ **Categories** — Organize expenses with built-in and custom categories
-- 📊 **Reports & Analytics** — Visual spending trends, category breakdowns, and date-range summaries
-- 🔁 **Recurring Transactions** — Set up daily/weekly/monthly/quarterly/yearly auto-entries
-- 💸 **Bill Splitter** — Split expenses across multiple people
-- 🌙 **Dark Mode** — Full dark theme support
-- 🔍 **Filter & Search** — Filter transactions by type, account, and date range
-- 📥 **Export to CSV** — Download your transaction history
-- 📱 **Responsive Design** — Works on desktop and mobile
+- 🐳 **Containerized Architecture** — Complete Docker Compose orchestration with PostgreSQL healthchecks and multi-stage backend builds.
+- 🔁 **Recurring Transactions Engine** — Configure automated recurring expenses with customizable recurrence cadences (`DAILY`, `WEEKLY`, `MONTHLY`, `YEARLY`).
+- 👥 **People & Peer Ledger** — Calculate exact net balances per contact (credits vs debits).
+- 🏦 **Multi-Account Management** — Seamlessly track multiple financial accounts (Cash, Bank accounts, Credit cards).
+- 📊 **Advanced Analytics & Charts** — Visual trends, category distributions, and date-range metrics powered by ApexCharts.
+- 💳 **Transaction Classification** — Support for Expenses, Income, Money Given (loans), and Money Taken (borrowing).
+- 📲 **UPI Integration Ready** — Dedicated DTOs and configuration limits for UPI payment QR payload generation.
+- 🔐 **Stateless Security** — JWT authentication with BCrypt password hashing and per-user data isolation.
+- 📥 **CSV Export** — One-click transaction export for tax and accounting preparation.
 
 ---
 
 ## 🛠️ Tech Stack
 
-### Backend
-| Technology | Purpose |
-|---|---|
-| Java 17 | Programming language |
-| Spring Boot 3.x | Backend framework |
-| Spring Security | Authentication & authorization |
-| Spring Data JPA | Database access layer |
-| PostgreSQL | Primary database |
-| Flyway | Database migrations (version control for DB) |
-| JWT (jjwt) | Secure token-based authentication |
-| Maven | Build tool |
+### Backend & Containers
+| Technology | Version | Purpose |
+| :--- | :--- | :--- |
+| **Java** | 17 LTS | Programming language |
+| **Spring Boot** | 3.5.x | Application framework & REST controllers |
+| **Docker & Docker Compose** | 3.9 spec | Multi-container application orchestration |
+| **PostgreSQL** | 16 Alpine | Primary relational datastore with container healthchecks |
+| **Spring Security** | 6.x | Stateless JWT security & authorization filters |
+| **Spring Data JPA** | 3.x | Hibernate ORM with query specifications |
+| **Flyway** | 10.x | Version-controlled immutable database migrations |
+| **Eclipse Temurin** | 17 JRE | Secure, minimal non-root container base image |
 
 ### Frontend
-| Technology | Purpose |
-|---|---|
-| Angular 17 | Frontend framework |
-| TypeScript | Programming language |
-| Angular Material | UI component library |
-| ApexCharts | Interactive charts |
-| SCSS | Styling |
+| Technology | Version | Purpose |
+| :--- | :--- | :--- |
+| **Angular** | 17.3 | Single Page Application framework |
+| **TypeScript** | 5.4 | Type-safe development |
+| **Angular Material** | 17.3 | Material Design UI components |
+| **ApexCharts** | 3.44 | Interactive data visualizations & dashboards |
+| **SCSS** | — | Structured responsive styling |
 
 ---
 
-## 📋 Prerequisites
+## 🚀 Quickstart & Docker Deployment
 
-Before you begin, make sure you have the following installed on your computer:
-
-- [Java 17+](https://adoptium.net/) — Download and install JDK 17 or higher
-- [Node.js 18+](https://nodejs.org/) — Includes npm (needed for Angular)
-- [PostgreSQL 14+](https://www.postgresql.org/download/) — The database
-- [Git](https://git-scm.com/) — To clone the project
-- A code editor like [VS Code](https://code.visualstudio.com/) (recommended)
-
----
-
-## 🚀 Installation & Setup
-
-### Step 1 — Clone the Repository
-
+### 1. Clone the Repository
 ```bash
-git clone https://github.com/your-username/dailyspend.git
-cd dailyspend
+git clone https://github.com/tanmayythakare/dailySpend2.git
+cd dailySpend2
 ```
 
----
-
-### Step 2 — Set Up the Database
-
-1. Open your PostgreSQL client (e.g., pgAdmin or the terminal).
-2. Create a new database:
-
-```sql
-CREATE DATABASE dailyspend;
-```
-
-> Flyway will automatically create all tables when the backend starts — you don't need to create them manually!
-
----
-
-### Step 3 — Configure the Backend
-
-1. Navigate to the backend folder:
-
-```bash
-cd dailyspend-backend
-```
-
-2. Create a local configuration file to store your secrets. Create the file:
-
-```
-src/main/resources/application-local.yml
-```
-
-3. Paste the following content and update the values:
-
-```yaml
-spring:
-  datasource:
-    url: jdbc:postgresql://localhost:5432/dailyspend
-    username: your_postgres_username      # e.g., postgres
-    password: your_postgres_password      # e.g., postgres
-
-jwt:
-  secret: your_super_secret_key_at_least_32_characters_long
-  expiration: 864000000   # 10 days in milliseconds
-```
-
-> ⚠️ **Never commit this file to Git!** It's already listed in `.gitignore`.
-
----
-
-### Step 4 — Run the Backend
-
-From inside the `dailyspend-backend` folder, run:
-
-```bash
-# On Mac/Linux
-./mvnw spring-boot:run -Dspring-boot.run.profiles=local
-
-# On Windows
-mvnw.cmd spring-boot:run -Dspring-boot.run.profiles=local
-```
-
-You should see the server start on **http://localhost:8080**
-
-> The first run will take a few minutes as Maven downloads all dependencies.
-
----
-
-### Step 5 — Run the Frontend
-
-Open a **new terminal** and navigate to the frontend folder:
-
-```bash
-cd dailyspend-frontend
-```
-
-Install dependencies (first time only):
-
-```bash
-npm install
-```
-
-Start the development server:
-
-```bash
-npm start
-```
-
-The app will open at **http://localhost:4200** 🎉
-
----
-
-## 🐳 Docker Setup (Backend + Database)
-
-> Use Docker Compose to spin up the backend and PostgreSQL together — no manual DB setup required.
-
-### Prerequisites
-- [Docker Desktop](https://www.docker.com/products/docker-desktop/) installed and running
-
-### Steps
-
-1. **Copy the environment template** and fill in your values:
-
+### 2. Configure Environment Variables
+Copy the provided `.env.example` template:
 ```bash
 cp .env.example .env
 ```
 
-Edit `.env` with your preferred database password and a strong JWT secret.
-
-2. **Build and start backend + database:**
-
-```bash
-docker compose up --build
+Verify or adjust environment values in `.env`:
+```env
+DATABASE_USERNAME=postgres
+DATABASE_PASSWORD=postgres
+JWT_SECRET=your_super_secret_key_at_least_32_characters_long
+JWT_EXPIRATION=864000000
 ```
 
-The backend will be available at **http://localhost:8080** once the database health check passes.
+### 3. Spin Up Backend & Database via Docker
+Run Docker Compose in detached mode:
+```bash
+docker compose up -d
+```
+Docker will:
+1. Pull and start `postgres:16-alpine`.
+2. Wait for PostgreSQL healthcheck to pass (`pg_isready`).
+3. Build the Spring Boot container via multi-stage Dockerfile and launch the API on **http://localhost:8080**.
 
-3. **Run the frontend separately** (in a new terminal):
+To check container status:
+```bash
+docker compose ps
+docker compose logs -f backend
+```
 
+### 4. Start the Frontend
+In a separate terminal, start the Angular development server:
 ```bash
 cd dailyspend-frontend
 npm install
 npm start
 ```
-
-The app will open at **http://localhost:4200** 🎉
-
-4. **Stop everything:**
-
-```bash
-docker compose down
-```
-
-> To also remove the database volume (reset all data): `docker compose down -v`
+Access the application at **http://localhost:4200**.
 
 ---
 
-## 🖥️ Usage
+### Alternative: Bare-Metal Local Development (Without Docker)
 
-1. **Register** — Go to `http://localhost:4200/register` and create an account.
+If you prefer running services directly on your host machine:
 
-2. **Login** — Sign in with your username and password.
+1. **Start PostgreSQL** and create the database:
+   ```sql
+   CREATE DATABASE dailyspend;
+   ```
+2. **Configure Backend**:
+   ```bash
+   cd dailyspend-backend
+   cp src/main/resources/application-local.yml.example src/main/resources/application-local.yml
+   ```
+3. **Run Backend**:
+   ```bash
+   # Windows
+   ./mvnw.cmd spring-boot:run -Dspring-boot.run.profiles=local
 
-3. **Create an Account** — On the Dashboard, add your first financial account (e.g., "My Wallet" → CASH, "SBI Savings" → BANK).
-
-4. **Add Transactions** — Go to Transactions → Add Transaction:
-   - Choose **Expense** to record spending
-   - Choose **Money Given** to record money you lent someone
-   - Choose **Money Taken** to record money you received
-
-5. **Manage People** — Go to the People section to see balances with each person you've transacted with.
-
-6. **View Reports** — Go to Reports to see charts showing your spending trends and category breakdowns.
+   # Linux / macOS
+   ./mvnw spring-boot:run -Dspring-boot.run.profiles=local
+   ```
+4. **Run Frontend**:
+   ```bash
+   cd ../dailyspend-frontend
+   npm start
+   ```
 
 ---
 
-## 📁 Folder Structure
+## 📁 Repository Structure
 
 ```
-dailyspend/
-│
-├── dailyspend-backend/          # Spring Boot backend
+dailySpend2/
+├── .env.example                         # Environment configuration template
+├── docker-compose.yml                   # Docker orchestration (db + backend)
+├── dailyspend-backend/                  # Spring Boot application
+│   ├── Dockerfile                       # Multi-stage container build
 │   ├── src/main/java/com/example/dailyspend/
-│   │   ├── controller/          # REST API endpoints
-│   │   ├── service/             # Business logic
-│   │   ├── repository/          # Database queries
-│   │   ├── entity/              # Database table models
-│   │   ├── dto/                 # Data transfer objects
-│   │   ├── config/              # Security & app configuration
-│   │   ├── exception/           # Error handling
-│   │   └── util/                # Helper utilities
+│   │   ├── config/                      # Security & JWT configuration
+│   │   ├── controller/                  # REST controllers (Analytics, Recurring, etc.)
+│   │   ├── dto/                         # Request, Response, and UPI DTOs
+│   │   ├── entity/                      # JPA Entities (RecurringTransaction, etc.)
+│   │   ├── repository/                  # JPA repositories
+│   │   └── service/                     # Business logic services
 │   ├── src/main/resources/
-│   │   ├── application.yaml     # Main configuration
-│   │   └── db/migration/        # Flyway SQL migration files (V1–V13)
-│   ├── Dockerfile               # Multi-stage Docker image for backend
-│   └── pom.xml                  # Maven dependencies
-│
-├── dailyspend-frontend/         # Angular frontend
-│   ├── src/app/
-│   │   ├── core/                # Services, interceptors, guards
-│   │   ├── features/            # Pages (dashboard, transactions, people, reports, schedules, split, settings)
-│   │   ├── layout/              # App shell / sidebar
-│   │   ├── models/              # TypeScript interfaces
-│   │   └── shared/              # Reusable components & imports
-│   └── package.json             # Node dependencies
-│
-├── docs/                        # Architecture and rules documentation
-│   └── Screenshots/             # App screenshots
-├── docker-compose.yml           # Docker Compose (backend + PostgreSQL)
-└── .env.example                 # Environment variables template
+│   │   ├── application.yaml             # Core application properties & UPI config
+│   │   ├── application-local.yml.example# Local dev configuration template
+│   │   └── db/migration/                # Flyway SQL migration scripts
+│   └── pom.xml                          # Maven build dependencies
+├── dailyspend-frontend/                 # Angular 17 SPA
+│   ├── src/app/                         # Core components, feature modules & routing
+│   ├── package.json                     # Frontend dependencies
+│   └── angular.json                     # Angular CLI configuration
+└── docs/
+    ├── ARCHITECTURE.md                  # Architectural specification
+    ├── RULES.md                         # Engineering guidelines
+    └── Screenshots/                     # System UI screenshots
 ```
 
 ---
 
-## 📸 Screenshots
+## 🔌 API Reference (v2 Extensions)
 
-| Page | Preview |
-|---|---|
-| Dashboard | ![Dashboard](docs/Screenshots/dashboard.png) |
-| Transactions | ![Transactions](docs/Screenshots/transaction.png) |
-| People Ledger | ![People](docs/Screenshots/people.png) |
-| Reports | ![Reports](docs/Screenshots/reports.png) |
+In addition to core authentication and account endpoints, DailySpend v2 exposes dedicated controllers for recurring transactions and analytics:
 
----
-
-## 🔌 API Overview
-
-The backend exposes a REST API. Here are the main endpoints:
-
-| Method | Endpoint | Description |
-|---|---|---|
-| POST | `/api/auth/register` | Register a new user |
-| POST | `/api/auth/login` | Login and receive a JWT token |
-| GET | `/api/v1/accounts` | List all accounts |
-| POST | `/api/v1/accounts` | Create a new account |
-| POST | `/api/v1/transactions/expense` | Record an expense |
-| POST | `/api/v1/transactions/money-given` | Record money given |
-| POST | `/api/v1/transactions/money-taken` | Record money taken |
-| GET | `/api/v1/transactions/filter` | Filter transactions with pagination |
-| GET | `/api/v1/people/with-balances` | List people with balances |
-| GET | `/api/v1/reports/monthly` | Monthly financial summary |
-
-> All endpoints (except auth) require a `Bearer <token>` header.
+| Method | Endpoint | Description | Auth Required |
+| :--- | :--- | :--- | :---: |
+| `POST` | `/api/auth/register` | Register new user account | No |
+| `POST` | `/api/auth/login` | Authenticate and obtain JWT token | No |
+| `GET` | `/api/v1/accounts` | Fetch user financial accounts | Yes |
+| `POST` | `/api/v1/recurring` | Schedule new recurring transaction | Yes |
+| `GET` | `/api/v1/recurring` | List active recurring transaction schedules | Yes |
+| `DELETE` | `/api/v1/recurring/{id}` | Cancel/delete recurring transaction schedule | Yes |
+| `GET` | `/api/v1/analytics/date-range` | Aggregate spending metrics across custom date window | Yes |
+| `GET` | `/api/v1/analytics/categories` | Category distribution & spending velocity summary | Yes |
+| `GET` | `/api/v1/people/with-balances` | Retrieve contact ledger with net debit/credit balance | Yes |
+| `GET` | `/api/v1/profile` | Retrieve user profile preferences | Yes |
 
 ---
 
-## 🔮 Future Improvements
+## 🔮 Roadmap
 
-Here are some features planned for future versions:
-
-- [ ] 📧 Email notifications for large transactions
-- [ ] 📱 Mobile app (React Native or Flutter)
-- [ ] 💱 Multi-currency support
-- [ ] 🔔 Budget alerts when spending exceeds a limit
-- [ ] 👨‍👩‍👧 Shared accounts for families
-- [ ] 🤖 AI-powered spending advisor
+- [x] Docker Compose multi-container orchestration
+- [x] Recurring transactions schema and backend service
+- [x] UPI QR payment payload modeling
+- [ ] Automated Celery/Quartz background cron worker for automatic recurring transaction execution
+- [ ] Mobile responsive PWA (Progressive Web App) packaging
+- [ ] Multi-currency conversion via real-time exchange rate API
 
 ---
 
 ## 🤝 Contributing
 
-Contributions are welcome! Here's how to get started:
-
-1. **Fork** the repository on GitHub
-2. **Clone** your fork locally:
+1. Fork the repository.
+2. Clone your fork:
    ```bash
-   git clone https://github.com/your-username/dailyspend.git
+   git clone https://github.com/tanmayythakare/dailySpend2.git
    ```
-3. **Create a new branch** for your feature:
+3. Create your feature branch:
    ```bash
-   git checkout -b feature/your-feature-name
+   git checkout -b feat/your-feature-name
    ```
-4. **Make your changes** and commit them:
+4. Commit your changes:
    ```bash
-   git commit -m "Add: description of your change"
+   git commit -m "feat: add descriptive feature summary"
    ```
-5. **Push** to your fork:
-   ```bash
-   git push origin feature/your-feature-name
-   ```
-6. Open a **Pull Request** on GitHub
-
-### Guidelines
-- Follow the existing code style
-- Write clear commit messages
-- Test your changes before submitting
-- For database changes, always add a new Flyway migration file — **never edit existing ones**
-- Keep pull requests focused on one feature or fix
-
----
-
-## 🐛 Known Issues / Troubleshooting
-
-**"Cannot connect to server" on login**
-→ Make sure the backend is running on port 8080 and PostgreSQL is running.
-
-**"Access Denied" errors**
-→ Your JWT token may have expired. Log out and log back in.
-
-**Build fails with Java version error**
-→ Make sure you have Java 17 or higher installed. Run `java -version` to check.
-
-**npm install fails**
-→ Try deleting the `node_modules` folder and running `npm install` again.
+5. Push to your branch and submit a Pull Request.
 
 ---
 
 ## 📄 License
 
-This project is licensed under the **MIT License** — see the [LICENSE](LICENSE) file for details.
-
-You are free to use, modify, and distribute this project for personal or commercial use.
+This project is licensed under the **[MIT License](LICENSE)**.
 
 ---
 
 ## 👤 Author
 
 **Tanmay Thakare**
-
-- GitHub: [@tanmaythakare](https://github.com/tanmaythakare)
-- Email: tanmayrthakare@gmail.com
-- LinkedIn: www.linkedin.com/in/tanmaythakare
-
----
-
-<div align="center">
-
-Made with ❤️ and ☕ | If you find this project useful, please ⭐ star the repository!
-
-</div>
-
-
+* GitHub: [@tanmayythakare](https://github.com/tanmayythakare)
+* Email: [tanmayrthakare@gmail.com](mailto:tanmayrthakare@gmail.com)
+* LinkedIn: [Tanmay Thakare](https://www.linkedin.com/in/tanmaythakare)

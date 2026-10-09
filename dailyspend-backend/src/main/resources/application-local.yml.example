@@ -1,0 +1,17 @@
+# Local Development Configuration Template for DailySpend v2
+# Copy this file to application-local.yml and supply your local credentials.
+# NOTE: application-local.yml is ignored by git (.gitignore) and should never be committed.
+
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5432/dailyspend
+    username: postgres
+    password: your_postgres_password
+
+jwt:
+  secret: your_super_secret_key_at_least_32_characters_long
+  expiration: 864000000   # 10 days in milliseconds
+
+app:
+  upi:
+    max-collection-amount: 25000.00
