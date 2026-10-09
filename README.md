@@ -35,6 +35,9 @@
 | **People Ledger (Debts & Loans)** | **Reports & Expense Breakdowns** |
 | ![People](docs/Screenshots/people.png) | ![Reports](docs/Screenshots/reports.png) |
 
+> [!TIP]
+> **Asset Storage**: System UI captures are organized under [`docs/Screenshots/`](docs/Screenshots/). Dropping new page screenshots into this directory will link directly into the showcase table.
+
 ---
 
 ## 🏛️ System Architecture
@@ -42,20 +45,20 @@
 ```mermaid
 flowchart TD
     subgraph ClientLayer ["Client Presentation Layer"]
-        SPA["Angular 17.3 SPA\n(:4200)\nAngular Material & ApexCharts"]
+        SPA["Angular 17.3 SPA<br/>(:4200)<br/>Angular Material & ApexCharts"]
     end
 
     subgraph DockerEnv ["Docker Compose Environment"]
-        API["Spring Boot 3.5 API Container\n(:8080)\nNon-root Eclipse Temurin 17"]
-        DB[("PostgreSQL 16 Alpine\n(:5432)\nNamed Volume: dailyspend_postgres_data")]
+        API["Spring Boot 3.5 API Container<br/>(:8080)<br/>Non-root Eclipse Temurin 17"]
+        DB[("PostgreSQL 16 Alpine<br/>(:5432)<br/>Named Volume: dailyspend_postgres_data")]
     end
 
     subgraph CoreServices ["Backend Application Modules"]
         Auth["JWT Security & Auth Filter"]
         TxService["Transaction & Account Service"]
-        RecurringEngine["Recurring Transaction Engine\n(Daily / Weekly / Monthly / Yearly)"]
+        RecurringEngine["Recurring Transaction Engine<br/>(Daily / Weekly / Monthly / Yearly)"]
         Analytics["Analytics & Summary Engine"]
-        Flyway["Flyway Migration Engine\n(db/migration)"]
+        Flyway["Flyway Migration Engine<br/>(db/migration)"]
     end
 
     SPA -->|"REST Requests + Bearer Token"| API
