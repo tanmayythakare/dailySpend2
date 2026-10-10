@@ -1,4 +1,8 @@
-# DailySpend v2 — Containerized Personal Finance Platform
+<div align="center">
+
+# DailySpend v2
+
+**Containerized Personal Finance & Peer Debt Orchestrator**
 
 <p align="center">
   <a href="https://adoptium.net/"><img src="https://img.shields.io/badge/Java-17-orange?style=flat-square&logo=openjdk" alt="Java 17"></a>
@@ -7,12 +11,23 @@
   <a href="https://www.postgresql.org/"><img src="https://img.shields.io/badge/PostgreSQL-16-blue?style=flat-square&logo=postgresql" alt="PostgreSQL 16"></a>
   <a href="https://www.docker.com/"><img src="https://img.shields.io/badge/Docker%20Compose-Containerized-2496ED?style=flat-square&logo=docker" alt="Docker Compose"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-yellow?style=flat-square" alt="MIT License"></a>
-  <a href="#quickstart-and-docker-deployment"><img src="https://img.shields.io/badge/Deployment-Local-informational?style=flat-square" alt="Local Deployment"></a>
+  <a href="#quickstart"><img src="https://img.shields.io/badge/Deployment-Local-informational?style=flat-square" alt="Local Deployment"></a>
 </p>
 
 <p align="center">
-  Next-generation full-stack personal finance platform with Docker containerization, recurring transaction automation, peer debt ledgers, and visual financial analytics.
+  One command spins up the entire full-stack financial ecosystem.<br>
+  Automated recurring expenses · Bidirectional peer debt ledger · Zero manual recalculations.
 </p>
+
+<p align="center">
+  <a href="#quick-flow">Quick Flow</a> •
+  <a href="#system-architecture">Architecture</a> •
+  <a href="#core-architectural-modules">Core Modules</a> •
+  <a href="#quickstart">Quickstart</a> •
+  <a href="#api-contract">API Contract</a>
+</p>
+
+</div>
 
 ---
 
@@ -23,7 +38,15 @@
 > - **1-Command Docker Compose**: Containerized PostgreSQL 16 + multi-stage Spring Boot backend with healthchecks.
 > - **Recurring Transactions Engine**: Automated scheduling for daily, weekly, monthly, and yearly recurring expenses.
 > - **Deep Analytics Module**: Date-range aggregates, category breakdown summaries, and UPI payment payload helpers.
-> - **User Profiles and Batch Processing**: Support for user profiles and batch transaction entries.
+> - **User Profiles and Batch Processing**: Dedicated user profile settings and batch transaction persistence.
+
+---
+
+## Quick Flow
+
+```
+docker compose up  →  JWT Auth  →  Multi-Account Ledger  →  Auto Recurring Engine  →  Live Analytics
+```
 
 ---
 
@@ -73,28 +96,27 @@ flowchart TD
 
 ---
 
-## Overview
+## Core Architectural Modules
 
-DailySpend v2 is a personal finance ecosystem built for developers and users who want reliable, containerized financial management. It eliminates the manual burden of recalculating loans, splitting group tabs, and manually entering recurring bills every month.
+### 01. Containerized Infrastructure and Concurrency
+* **Docker Compose Orchestration**: Single-command startup with dependencies, environment injection, and persistent volume management.
+* **Database Healthchecks**: The Spring Boot backend container depends on native PostgreSQL health verification (`pg_isready`) before initiating migrations.
+* **Hardened Base Image**: Multi-stage build producing a lean runtime artifact executed by an unprivileged system user (`appuser:appgroup`).
+* **Flyway Schema Validation**: Hibernate operates in `validate` mode; all database mutations are tracked through versioned, immutable SQL scripts.
 
-### Problem and Solution
-1. **Recurring Bill Fatigue**: Automatically handles recurring rent, subscriptions, and utility bills.
-2. **Peer Debts and Group Transparency**: Real-time peer balance tracking so you know exactly who owes whom across multiple shared expenses.
-3. **Frictionless Local Execution**: No need to install and configure PostgreSQL or Java dependencies manually — Docker Compose spins up the entire backend and database stack in seconds.
+### 02. Peer Debt and Net Settlement Ledger
+* **Bidirectional Loan Tracking**: Separates direct outlays from peer transactions (`Money Given` vs `Money Taken`).
+* **Real-Time Net Balance Resolution**: Continuously balances debit and credit positions per contact so you immediately know who owes whom.
+* **UPI Integration Ready**: Built-in payloads (`UpiQrPayloadDto`) and configurable transaction ceilings (`app.upi.max-collection-amount`) for frictionless instant payments.
 
----
+### 03. Recurring Transaction Engine
+* **Automated Cadence Scheduling**: Configure recurring commitments across `DAILY`, `WEEKLY`, `MONTHLY`, and `YEARLY` intervals.
+* **Fixed Obligation Management**: Eliminates manual logging for regular expenses like rent, utilities, and recurring subscriptions.
 
-## Features
-
-- **Containerized Architecture** — Complete Docker Compose orchestration with PostgreSQL healthchecks and multi-stage backend builds.
-- **Recurring Transactions Engine** — Configure automated recurring expenses with customizable recurrence cadences (`DAILY`, `WEEKLY`, `MONTHLY`, `YEARLY`).
-- **People and Peer Ledger** — Calculate exact net balances per contact (credits vs debits).
-- **Multi-Account Management** — Seamlessly track multiple financial accounts (Cash, Bank accounts, Credit cards).
-- **Advanced Analytics and Charts** — Visual trends, category distributions, and date-range metrics powered by ApexCharts.
-- **Transaction Classification** — Support for Expenses, Income, Money Given (loans), and Money Taken (borrowing).
-- **UPI Integration Ready** — Dedicated DTOs and configuration limits for UPI payment QR payload generation.
-- **Stateless Security** — JWT authentication with BCrypt password hashing and per-user data isolation.
-- **CSV Export** — One-click transaction export for tax and accounting preparation.
+### 04. Financial Telemetry and Analytics
+* **ApexCharts Visual Pipeline**: Live spending velocity, category distributions, and multi-account balance sheets.
+* **Date-Range Aggregates**: Parameterized analytics endpoints for month-over-month and custom interval comparisons.
+* **Data Portability**: Full CSV export engine for external financial analysis.
 
 ---
 
@@ -123,7 +145,7 @@ DailySpend v2 is a personal finance ecosystem built for developers and users who
 
 ---
 
-## Quickstart and Docker Deployment
+## Quickstart
 
 ### 1. Clone the Repository
 ```bash
@@ -131,73 +153,71 @@ git clone https://github.com/tanmayythakare/dailySpend2.git
 cd dailySpend2
 ```
 
-### 2. Configure Environment Variables
-Copy the provided `.env.example` template:
+### 2. Configure Environment
 ```bash
 cp .env.example .env
 ```
 
-Verify or adjust environment values in `.env`:
-```env
-DATABASE_USERNAME=postgres
-DATABASE_PASSWORD=postgres
-JWT_SECRET=your_super_secret_key_at_least_32_characters_long
-JWT_EXPIRATION=864000000
-```
-
-### 3. Spin Up Backend and Database via Docker
-Run Docker Compose in detached mode:
+### 3. Launch Backend & Database (1-Command Docker)
 ```bash
 docker compose up -d
 ```
-Docker will:
-1. Pull and start `postgres:16-alpine`.
-2. Wait for PostgreSQL healthcheck to pass (`pg_isready`).
-3. Build the Spring Boot container via multi-stage Dockerfile and launch the API on **http://localhost:8080**.
+Docker automatically:
+1. Boots `postgres:16-alpine` and waits for `pg_isready` healthcheck.
+2. Compiles and executes the Spring Boot container via multi-stage Dockerfile.
+3. Exposes the backend API on **http://localhost:8080**.
 
-To check container status:
+To inspect runtime logs:
 ```bash
-docker compose ps
 docker compose logs -f backend
 ```
 
-### 4. Start the Frontend
-In a separate terminal, start the Angular development server:
+### 4. Launch Frontend
 ```bash
 cd dailyspend-frontend
 npm install
 npm start
 ```
-Access the application at **http://localhost:4200**.
+Open **http://localhost:4200** in your browser.
 
 ---
 
-### Alternative: Bare-Metal Local Development (Without Docker)
+### Alternative: Bare-Metal Execution (Without Docker)
 
-If you prefer running services directly on your host machine:
+If running services directly on your local system:
 
-1. **Start PostgreSQL** and create the database:
-   ```sql
-   CREATE DATABASE dailyspend;
-   ```
-2. **Configure Backend**:
+1. **Create Database**: `CREATE DATABASE dailyspend;`
+2. **Configure Local Properties**:
    ```bash
    cd dailyspend-backend
    cp src/main/resources/application-local.yml.example src/main/resources/application-local.yml
    ```
 3. **Run Backend**:
    ```bash
-   # Windows
    ./mvnw.cmd spring-boot:run -Dspring-boot.run.profiles=local
-
-   # Linux / macOS
-   ./mvnw spring-boot:run -Dspring-boot.run.profiles=local
    ```
 4. **Run Frontend**:
    ```bash
-   cd ../dailyspend-frontend
-   npm start
+   cd ../dailyspend-frontend && npm start
    ```
+
+---
+
+## API Contract
+
+| Method | Endpoint | Description | Auth |
+| :--- | :--- | :--- | :---: |
+| `POST` | `/api/auth/register` | Register new user account | No |
+| `POST` | `/api/auth/login` | Authenticate and obtain JWT token | No |
+| `GET` | `/api/v1/accounts` | Fetch user financial accounts | Yes |
+| `POST` | `/api/v1/accounts` | Create account (Cash, Bank, Credit) | Yes |
+| `POST` | `/api/v1/recurring` | Schedule new recurring transaction | Yes |
+| `GET` | `/api/v1/recurring` | List active recurring transaction schedules | Yes |
+| `DELETE` | `/api/v1/recurring/{id}` | Cancel recurring transaction schedule | Yes |
+| `GET` | `/api/v1/analytics/date-range` | Aggregate spending metrics across custom date window | Yes |
+| `GET` | `/api/v1/analytics/categories` | Category distribution and spending velocity summary | Yes |
+| `GET` | `/api/v1/people/with-balances` | Retrieve contact ledger with net debit/credit balance | Yes |
+| `GET` | `/api/v1/profile` | Retrieve user profile preferences | Yes |
 
 ---
 
@@ -230,36 +250,6 @@ dailySpend2/
     ├── RULES.md                         # Engineering guidelines
     └── Screenshots/                     # System UI screenshots
 ```
-
----
-
-## API Reference (v2 Extensions)
-
-In addition to core authentication and account endpoints, DailySpend v2 exposes dedicated controllers for recurring transactions and analytics:
-
-| Method | Endpoint | Description | Auth Required |
-| :--- | :--- | :--- | :---: |
-| `POST` | `/api/auth/register` | Register new user account | No |
-| `POST` | `/api/auth/login` | Authenticate and obtain JWT token | No |
-| `GET` | `/api/v1/accounts` | Fetch user financial accounts | Yes |
-| `POST` | `/api/v1/recurring` | Schedule new recurring transaction | Yes |
-| `GET` | `/api/v1/recurring` | List active recurring transaction schedules | Yes |
-| `DELETE` | `/api/v1/recurring/{id}` | Cancel/delete recurring transaction schedule | Yes |
-| `GET` | `/api/v1/analytics/date-range` | Aggregate spending metrics across custom date window | Yes |
-| `GET` | `/api/v1/analytics/categories` | Category distribution & spending velocity summary | Yes |
-| `GET` | `/api/v1/people/with-balances` | Retrieve contact ledger with net debit/credit balance | Yes |
-| `GET` | `/api/v1/profile` | Retrieve user profile preferences | Yes |
-
----
-
-## Roadmap
-
-- [x] Docker Compose multi-container orchestration
-- [x] Recurring transactions schema and backend service
-- [x] UPI QR payment payload modeling
-- [ ] Automated Celery/Quartz background cron worker for automatic recurring transaction execution
-- [ ] Mobile responsive PWA (Progressive Web App) packaging
-- [ ] Multi-currency conversion via real-time exchange rate API
 
 ---
 
